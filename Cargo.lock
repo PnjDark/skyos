@@ -242,6 +242,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "dunce"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92773504d58c093f6de2459af4af33faa518c13451eb8f2b5698ed3d36e7c813"
+
+[[package]]
 name = "errno"
 version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -694,6 +700,22 @@ dependencies = [
  "sha2",
  "tokio",
  "tools",
+ "uuid",
+]
+
+[[package]]
+name = "skyos-provisioner"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "dunce",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
  "uuid",
 ]
 

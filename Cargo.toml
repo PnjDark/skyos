@@ -4,6 +4,7 @@ members = [
     "tools",
     "agents",
     "models",
+    "provisioner",
     "clients/cli"
 ]
 resolver = "2"

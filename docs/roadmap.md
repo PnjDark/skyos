@@ -10,6 +10,8 @@ Status was established by inspecting the code and running `cargo test --workspac
 | Phase 0 — Kernel core | Required output list below | **Mostly implemented.** Event ledger (`kernel/src/events`), durable task state machine (`kernel/src/tasks/state.rs`), checkpoints + crash-recovery engine with idempotent/at-most-once/reconcilable semantics (`kernel/src/tasks/checkpoint.rs`, `kernel/src/recovery.rs`), CAS artifact registry with lineage (`kernel/src/artifacts`), SQLite WAL persistence (`kernel/src/persistence`). **Missing:** scheduler and task claims/leases — no scheduler code exists. |
 | Phase 1 — Layer-0 tools | Filesystem, process, git, network, containers | **Implemented** via `UnifiedToolRegistry` (tools/src/registry.rs) with typed schemas, capability-gated dispatch, and per-tool side-effect semantics. Also includes `hardware` and `domain` tools beyond the planned set. Network tool is local bind/datagram only (no outbound HTTP tool). |
 | Phase 2 — Agent runtime | observe/propose/permit/act loop with budgets | **Implemented** in `agents/src/executor.rs`: budget enforcement (steps, wall time, repairs), grant re-check before every dispatch, fail-closed on missing/expired grants, model-proposed actions through the unified dispatcher. |
+| Phase 3A — `RepositoryProvisioner` (Software Factory) | Isolated worktree provisioning | **Implemented 2026-10-23** (`provisioner/` crate, `skyos-provisioner`): canonical path guard (dunce, traversal + symlink containment), explicit `DirtyTreePolicy` with zero-loss invariant, staged atomic worktree lifecycle (`.sky/tmp` → `.sky/worktrees`) with lock-file crash recovery, 8 integration tests passing. Not yet wired to the CLI or kernel permission engine. |
+| Phase 3B — `skyos-transform` (OCC engine) | — | Not implemented. |
 | Phase 3 — Autonomy benchmarks A0–A4 | Benchmark suite | **Not implemented.** No `tests/autonomy/` suite exists. |
 | Phase 4 — Persistence, crash recovery, capability tests A5–A8 | Capability tests | **Partially:** crash-recovery mechanics exist in the kernel with unit tests; the A5–A8 benchmark suite and network-permission enforcement tests do not. |
 | Phase 5 — Model abstraction | Ollama, llama.cpp, cloud adapters | **Abstraction only.** `models/src/provider.rs` defines `ModelProvider`/`ActionProposal` and the executor consumes it; no concrete Ollama/llama.cpp/cloud adapter is implemented. |
@@ -26,6 +28,28 @@ as were three Windows file-lock failures in the checkpoint tests. The claims of
 "HMAC signing, IPC bridge, Integration SDK, client output normalizer/PDM
 renderer, and Cognitive Core" found in external planning documents do **not**
 correspond to any code in this repository and should not be treated as delivered.
+
+## Scheduler gap audit (2026-10-23) — decision: DEFERRED
+
+Audited the kernel against the scheduler requirements table before Phase 3A.
+Evidence from `kernel/src/tasks/store.rs` and `persistence/migrations.rs`:
+
+| Capability | Required for | Existing provider | Decision |
+| --- | --- | --- | --- |
+| Durable task state | Everything | `TaskStore` (SQLite WAL, M2 schema) with compare-and-swap `transition_state` (from-state checked inside a transaction) | **REUSE** |
+| Checkpoint & crash recovery | Long-running agents | `CheckpointStore` + `RecoveryEngine` (M4 schema, per-step semantics classification) | **REUSE** |
+| Audit evidence | Everything | `EventBus` append-only ledger, written in the same transaction as state changes | **REUSE** |
+| Atomic task claiming / competing workers | Multi-worker pools | None. The `Claimed` state exists in the state machine but no code ever transitions into it, and the `tasks` table has no worker/lease columns | **NOT NEEDED YET** |
+| Lease expiry & heartbeat | Worker-loss tolerance | None | **NOT NEEDED YET** |
+| Cancellation & timeouts | Interactive cancel | Budget engine in `agents/src/executor.rs` (step/wall-time/repair budgets) covers timeouts; no external cancellation signal | **EXTEND LATER** |
+| Priority scheduling | Work ordering | `priority` column exists on tasks but nothing orders by it | **NOT NEEDED YET** |
+
+**Decision: do NOT build `scheduler.rs` before Phase 3A.** `RepositoryProvisioner`
+needs only a unique `task_id`, file-level staging locks, and canonical path
+guards — none of which require a multi-worker claim/lease queue. If concurrent
+workers arrive in a later phase, extend `TaskStore` incrementally with
+`leased_by` / `lease_expires_at` columns and an atomic claim query rather than
+adding a standalone scheduler subsystem.
 
 ## Phase 0: Kernel core
 
