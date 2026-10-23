@@ -1,0 +1,29 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+
+# Sky OS local runtime state, worktrees, and databases
+/.sky/
+*.db
+*.db-wal
+*.db-shm
+
+# Archived nested git metadata (local backup, never tracked)
+/.sky_bak/
+
+# Local tooling / agent workspace state
+/.freebuff/
+/.kilo/
+
+# Large distributable archive
+/skyos.zip
+
+# IDE & environment
+.vscode/
+.idea/
+*.env
+*.env.local
+
+# OS files
+.DS_Store
+Thumbs.db

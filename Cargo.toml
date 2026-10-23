@@ -1,0 +1,9 @@
+[workspace]
+members = [
+    "kernel",
+    "tools",
+    "agents",
+    "models",
+    "clients/cli"
+]
+resolver = "2"
