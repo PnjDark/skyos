@@ -11,6 +11,7 @@ path = "src/main.rs"
 [dependencies]
 kernel = { path = "../../kernel" }
 tools = { path = "../../tools" }
+skyos-provisioner = { path = "../../provisioner" }
 clap = { version = "4.4", features = ["derive"] }
 tokio = { version = "1.0", features = ["full"] }
 uuid = { version = "1.0", features = ["v4", "serde"] }
@@ -19,3 +20,7 @@ serde_json = "1.0"
 chrono = "0.4"
 anyhow = "1.0"
 sha2 = "0.10"
+
+[dev-dependencies]
+rusqlite = { version = "0.36", features = ["bundled"] }
+tempfile = "3.3"

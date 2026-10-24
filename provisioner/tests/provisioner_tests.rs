@@ -285,6 +285,63 @@ async fn test_repeated_requests_do_not_duplicate_or_corrupt() {
     assert_eq!(recovered, 0);
 }
 
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn test_concurrent_duplicate_requests_create_single_worktree() {
+    let temp = TempDir::new().unwrap();
+    let sandbox = temp.path();
+    let repo_dir = sandbox.join("race-project");
+    std::fs::create_dir_all(repo_dir.join(".git")).unwrap();
+
+    let provisioner = Arc::new(
+        RepositoryProvisioner::new(
+            sandbox,
+            adapter(false),
+            DirtyTreePolicy::IsolateMainTreeUntouched,
+        )
+        .unwrap(),
+    );
+
+    // Two callers race the identical request concurrently.
+    let p1 = {
+        let p = Arc::clone(&provisioner);
+        async move { p.provision_workspace("task-race", "race-project", "feat/race", None).await }
+    };
+    let p2 = {
+        let p = Arc::clone(&provisioner);
+        async move { p.provision_workspace("task-race", "race-project", "feat/race", None).await }
+    };
+    let (r1, r2) = tokio::join!(p1, p2);
+
+    // Exactly one worktree must exist regardless of who won the lock race.
+    let worktree_dir = repo_dir.join(".sky/worktrees/task-race");
+    assert!(worktree_dir.exists());
+    let count = std::fs::read_dir(repo_dir.join(".sky/worktrees")).unwrap().count();
+    assert_eq!(count, 1, "duplicate worktrees created under concurrency");
+    // Lock must be released by the winner; no staged tmp dir left behind.
+    assert!(!repo_dir.join(".sky/provision_task-race.lock").exists());
+    assert!(!repo_dir.join(".sky/tmp/prov_task-race").exists());
+
+    // Outcomes: winner succeeds; the loser either observes the identical
+    // completed context (if it arrived after the context file was written)
+    // or is rejected with IncompleteProvisioningLock. Never both succeed
+    // with different contexts, and never both fail leaving no workspace.
+    match (r1, r2) {
+        (Ok(a), Ok(b)) => {
+            assert_eq!(a.canonical_root, b.canonical_root);
+            assert_eq!(a.created_at, b.created_at);
+        }
+        (Ok(_), Err(e)) | (Err(e), Ok(_)) => {
+            assert!(
+                matches!(e, ProvisionError::IncompleteProvisioningLock { .. }),
+                "loser must be rejected by the lock, got: {e}"
+            );
+        }
+        (Err(e1), Err(e2)) => panic!(
+            "both concurrent callers failed: {e1} / {e2}"
+        ),
+    }
+}
+
 #[tokio::test]
 async fn test_repository_not_found() {
     let temp = TempDir::new().unwrap();

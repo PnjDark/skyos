@@ -47,6 +47,9 @@ pub enum WorkspaceKind {
 pub struct WorkspaceContext {
     pub task_id: String,
     pub project_id: String,
+    /// Base revision the worktree was created from (None = repository default).
+    #[serde(default)]
+    pub base_commit: Option<String>,
     pub workspace_kind: WorkspaceKind,
     pub canonical_root: PathBuf,
     pub created_at: DateTime<Utc>,

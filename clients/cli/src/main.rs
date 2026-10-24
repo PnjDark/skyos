@@ -10,7 +10,9 @@ use kernel::tasks::store::TaskStore;
 use sky_cli::executor::TrustedExecutor;
 use sky_cli::operations::OperationSpec;
 use sky_cli::recovery::RecoveryEngine;
+use sky_cli::workspace::{GitCliAdapter, GovernedProvisioner, ProvisionRequest};
 use std::path::PathBuf;
+use std::sync::Arc;
 use tools::registry::{InvocationRequest, UnifiedToolRegistry};
 use tools::types::{ToolContext, ToolStatus};
 use uuid::Uuid;
@@ -44,6 +46,49 @@ enum Commands {
     Tool {
         #[command(subcommand)]
         command: ToolCommands,
+    },
+    /// Governed task-workspace provisioning (Phase 3A)
+    Workspace {
+        #[command(subcommand)]
+        command: WorkspaceCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum WorkspaceCommands {
+    /// Provision an isolated worktree for a durable task through the kernel
+    /// permission engine and event ledger.
+    Provision {
+        /// Task ID that owns the workspace (must exist in the ledger)
+        task_id: Uuid,
+        /// Project directory relative to --workspace (the sandbox root)
+        project_id: String,
+        /// Branch to create for the isolated worktree
+        #[arg(short, long, default_value = "sky/task-workspace")]
+        branch: String,
+        /// Optional base revision (commit, tag, or ref)
+        #[arg(short, long)]
+        commit: Option<String>,
+        /// Sandbox root that bounds all provisioned paths
+        #[arg(short, long, default_value = ".")]
+        workspace: PathBuf,
+        /// Authorized capabilities (repeatable), e.g.:
+        ///   --capability git-write:<project-path>
+        ///   --capability fs-write:<project-path>
+        /// Both are required; provisioning fails closed without them.
+        #[arg(long)]
+        capability: Vec<String>,
+        /// Dirty-tree policy: block | isolate
+        #[arg(short, long, default_value = "isolate")]
+        dirty_policy: String,
+    },
+    /// Detect and clean up interrupted provisioning operations for a project.
+    Recover {
+        /// Project directory relative to --workspace
+        project_id: String,
+        /// Sandbox root that bounds all provisioned paths
+        #[arg(short, long, default_value = ".")]
+        workspace: PathBuf,
     },
 }
 
@@ -273,6 +318,88 @@ async fn main() -> Result<()> {
 
             if result.status != ToolStatus::Succeeded {
                 std::process::exit(1);
+            }
+        }
+
+        // ── Phase 3A: governed workspace provisioning ─────────────────────
+        Commands::Workspace {
+            command:
+                WorkspaceCommands::Provision {
+                    task_id,
+                    project_id,
+                    branch,
+                    commit,
+                    workspace,
+                    capability,
+                    dirty_policy,
+                },
+        } => {
+            use kernel::permissions::types::Capability;
+            use skyos_provisioner::models::DirtyTreePolicy;
+
+            if capability.is_empty() {
+                anyhow::bail!(
+                    "--capability is required (both git-write:<project-path> and \
+                     fs-write:<project-path>); provisioning fails closed"
+                );
+            }
+            let caps: Vec<Capability> = capability
+                .iter()
+                .map(|c| parse_capability_flag(c, &workspace))
+                .collect::<Result<Vec<_>>>()?;
+
+            let dirty_policy = match dirty_policy.as_str() {
+                "block" => DirtyTreePolicy::BlockOnDirty,
+                "isolate" => DirtyTreePolicy::IsolateMainTreeUntouched,
+                other => anyhow::bail!(
+                    "Unknown --dirty-policy {other:?}: expected 'block' or 'isolate'"
+                ),
+            };
+
+            // The grant is minted for exactly the requested capabilities; the
+            // PolicyEngine independently requires BOTH GitWrite and
+            // FileSystemWrite coverage for the project directory.
+            let grant = grant_issuer.issue_grant("cli_user", task_id, caps, None);
+            let governed =
+                GovernedProvisioner::new(&task_store, &event_bus, Arc::new(GitCliAdapter));
+            let request = ProvisionRequest {
+                task_id,
+                project_id: &project_id,
+                target_branch: &branch,
+                base_commit: commit.as_deref(),
+                dirty_policy,
+            };
+
+            match governed.provision(&workspace, &request, &grant).await {
+                Ok(context) => {
+                    println!("Workspace provisioned successfully!");
+                    println!("Task:      {task_id}");
+                    println!("Root:      {}", context.canonical_root.display());
+                    println!("Branch:    {branch}");
+                    println!("Created:   {}", context.created_at);
+                }
+                Err(err) => {
+                    eprintln!("[FAILED]: Provisioning halted: {err}");
+                    std::process::exit(1);
+                }
+            }
+        }
+        Commands::Workspace {
+            command: WorkspaceCommands::Recover {
+                project_id,
+                workspace,
+            },
+        } => {
+            let governed =
+                GovernedProvisioner::new(&task_store, &event_bus, Arc::new(GitCliAdapter));
+            match governed.recover(&workspace, &project_id).await {
+                Ok(count) => {
+                    println!("[RECOVERY]: reconciled {count} interrupted provisioning operation(s).");
+                }
+                Err(err) => {
+                    eprintln!("[FAILED]: Recovery halted: {err}");
+                    std::process::exit(1);
+                }
             }
         }
     }

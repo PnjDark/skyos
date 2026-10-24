@@ -36,6 +36,14 @@ pub enum ProvisionError {
     #[error("IO failure: {0}")]
     Io(#[from] std::io::Error),
 
-    #[error("Provisioning lock exists for task '{task_id}': Incomplete operation detected")]
+    #[error("Provisioning lock exists for task '{task_id}': Incomplete operation detected; run recovery first")]
     IncompleteProvisioningLock { task_id: String },
+
+    #[error(
+        "Dirty-tree policy '{policy}' is not implemented; refusing to proceed as if it were"
+    )]
+    UnimplementedPolicy { policy: String },
+
+    #[error("Task '{0}' is not registered in the runtime ledger")]
+    TaskNotFound(String),
 }
