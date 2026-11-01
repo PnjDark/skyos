@@ -3,6 +3,7 @@ use clap::{Parser, Subcommand};
 use kernel::artifacts::registry::ArtifactRegistry;
 use kernel::events::EventBus;
 use kernel::permissions::issuer::GrantIssuer;
+use kernel::permissions::policy::AuthorizationPolicy;
 use kernel::permissions::types::Capability;
 use kernel::persistence::db::DatabaseConnectionPool;
 use kernel::tasks::state::TaskState;
@@ -51,6 +52,39 @@ enum Commands {
     Workspace {
         #[command(subcommand)]
         command: WorkspaceCommands,
+    },
+    /// Governed reconciliation of uncertain invocations (Phase 6.0)
+    Recovery {
+        #[command(subcommand)]
+        command: RecoveryCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum RecoveryCommands {
+    /// Resolve an uncertain invocation from independently collected evidence.
+    ///
+    /// The operator names an *observation*; the runtime runs the probe and
+    /// derives the verdict. A caller cannot supply a verdict.
+    Reconcile {
+        /// Task that owns the interrupted invocation
+        task_id: Uuid,
+        /// Step number of the checkpoint
+        step_number: usize,
+        /// Invocation id recorded for that checkpoint
+        #[arg(long)]
+        invocation_id: Uuid,
+        /// Observation spec as JSON, e.g.
+        ///   {"kind":"git_commit","repo_root":".","intent_message":"msg"}
+        ///   {"kind":"file_checksum","path":"a.txt","expected_sha256":"…"}
+        #[arg(long)]
+        evidence: String,
+        /// Why this decision is being made (recorded verbatim)
+        #[arg(long, default_value = "operator reconciliation")]
+        reason: String,
+        /// Claimed operator identity; must match the OS process identity
+        #[arg(long)]
+        actor: Option<String>,
     },
 }
 
@@ -175,11 +209,21 @@ async fn main() -> Result<()> {
     domain_store.register_domain(&kernel::domain::schemas::ProductivitySchema)?;
 
     // FAIL CLOSED: Propagation of startup reconciliation errors.
-    let recovery = RecoveryEngine::new(&task_store, &event_bus);
+    // The CLI carries an empty authorization policy on purpose: it classifies
+    // interrupted invocations but never re-authorizes them.  Resuming a
+    // `RetryReady` step needs an explicit, policy-backed authorization decision.
+    let authorization_policy = Arc::new(AuthorizationPolicy::new("sky-cli-default", 1));
+    let recovery = RecoveryEngine::new(
+        &task_store,
+        &event_bus,
+        &db_path,
+        grant_issuer.clone(),
+        authorization_policy,
+    )?;
     let reconciled = recovery.reconcile_orphaned_tasks()?;
     if !reconciled.is_empty() {
         println!(
-            "[RECOVERY]: Reconciled {} interrupted tasks to Failed state.",
+            "[RECOVERY]: Processed {} interrupted tasks.",
             reconciled.len()
         );
     }
@@ -351,9 +395,9 @@ async fn main() -> Result<()> {
             let dirty_policy = match dirty_policy.as_str() {
                 "block" => DirtyTreePolicy::BlockOnDirty,
                 "isolate" => DirtyTreePolicy::IsolateMainTreeUntouched,
-                other => anyhow::bail!(
-                    "Unknown --dirty-policy {other:?}: expected 'block' or 'isolate'"
-                ),
+                other => {
+                    anyhow::bail!("Unknown --dirty-policy {other:?}: expected 'block' or 'isolate'")
+                }
             };
 
             // The grant is minted for exactly the requested capabilities; the
@@ -385,22 +429,50 @@ async fn main() -> Result<()> {
             }
         }
         Commands::Workspace {
-            command: WorkspaceCommands::Recover {
-                project_id,
-                workspace,
-            },
+            command:
+                WorkspaceCommands::Recover {
+                    project_id,
+                    workspace,
+                },
         } => {
             let governed =
                 GovernedProvisioner::new(&task_store, &event_bus, Arc::new(GitCliAdapter));
             match governed.recover(&workspace, &project_id).await {
                 Ok(count) => {
-                    println!("[RECOVERY]: reconciled {count} interrupted provisioning operation(s).");
+                    println!(
+                        "[RECOVERY]: reconciled {count} interrupted provisioning operation(s)."
+                    );
                 }
                 Err(err) => {
                     eprintln!("[FAILED]: Recovery halted: {err}");
                     std::process::exit(1);
                 }
             }
+        }
+
+        // ── Phase 6.0: governed reconciliation ──────────────────────────────
+        Commands::Recovery {
+            command:
+                RecoveryCommands::Reconcile {
+                    task_id,
+                    step_number,
+                    invocation_id,
+                    evidence,
+                    reason,
+                    actor,
+                },
+        } => {
+            sky_cli::recovery::reconcile_invocation(
+                &db_path,
+                sky_cli::recovery::ReconcileArgs {
+                    task_id,
+                    step_number,
+                    invocation_id,
+                    evidence,
+                    reason,
+                    actor,
+                },
+            )?;
         }
     }
 

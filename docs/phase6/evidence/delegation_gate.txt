@@ -1,0 +1,18 @@
+   Compiling kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.11s
+     Running tests\delegation_tests.rs (target\debug\deps\delegation_tests-832966e237026426.exe)
+
+running 10 tests
+test an_edge_is_rejected_when_the_prerequisite_does_not_exist ... ok
+test a_dependency_cycle_is_rejected_without_partial_writes ... ok
+test a_task_cannot_depend_on_itself ... ok
+test a_deeper_cycle_is_rejected_too ... ok
+test child_tasks_are_created_under_their_parent ... ok
+test a_dependent_child_stays_created_until_its_prerequisite_completes ... ok
+test a_dependent_is_not_released_while_another_prerequisite_is_outstanding ... ok
+test completing_a_prerequisite_releases_exactly_its_dependents ... ok
+test readiness_and_completion_are_recorded_in_the_ledger ... ok
+test the_dag_and_readiness_survive_a_restart ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.85s
+

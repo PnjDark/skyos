@@ -64,6 +64,20 @@ impl GrantIssuer {
             .cloned()
     }
 
+    /// Get an active grant for the specific agent and task being recovered.
+    pub fn get_active_grant_for_agent_task(
+        &self,
+        agent_id: &str,
+        task_id: &Uuid,
+    ) -> Option<CapabilityGrant> {
+        let lock = self.grants.lock().expect("GrantIssuer mutex poisoned");
+        lock.values()
+            .find(|grant| {
+                grant.agent_id == agent_id && grant.task_id == *task_id && grant.is_valid()
+            })
+            .cloned()
+    }
+
     /// Immediately revoke an active grant.
     pub fn revoke_grant(&self, grant_id: &Uuid) -> Result<(), IssuerError> {
         let mut lock = self.grants.lock().expect("GrantIssuer mutex poisoned");

@@ -5,6 +5,8 @@ members = [
     "agents",
     "models",
     "provisioner",
-    "clients/cli"
+    "transform",
+    "clients/cli",
+    "crash_harness"
 ]
 resolver = "2"

@@ -1,0 +1,17 @@
+# Lints (2026-10-30)
+#
+# Command: cargo clippy --workspace --exclude agents --exclude sky-cli --all-targets -- -D warnings
+# Result: exit 0, no diagnostics. (Full-workspace clippy is blocked by the same
+# agents build error recorded in workspace_build_blocked_2026-10-30.txt.)
+#
+# Raw output follows.
+
+    Checking tempfile v3.27.0
+    Checking kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+    Checking tracing v0.1.44
+    Checking skyos-provisioner v0.1.0 (C:\Users\Penjy\Dev\skyos\provisioner)
+    Checking tools v0.1.0 (C:\Users\Penjy\Dev\skyos\tools)
+    Checking skyos-transform v0.1.0 (C:\Users\Penjy\Dev\skyos\transform)
+    Checking models v0.1.0 (C:\Users\Penjy\Dev\skyos\models)
+    Checking skyos-crash-harness v0.1.0 (C:\Users\Penjy\Dev\skyos\crash_harness)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 11.08s

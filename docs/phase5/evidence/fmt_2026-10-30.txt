@@ -1,0 +1,103 @@
+# Formatting (2026-10-30)
+#
+# Command: cargo fmt --all --check
+# Result: exit 1 — 8 diffs, ALL in kernel/src/delegation/cancellation.rs, which is
+# another workstream's in-flight Phase 6.1D file. Every file owned by this phase
+# (models/src/ollama.rs, models/src/lib.rs, models/tests/ollama_provider_tests.rs)
+# is rustfmt-clean:
+#   rustfmt --edition 2024 --check models/src/ollama.rs models/src/lib.rs models/tests/ollama_provider_tests.rs  ->  clean
+#
+# Raw output follows.
+
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:30:
+ use uuid::Uuid;
+ 
+ use crate::events::EventBus;
+[31m-use crate::identity::{
+[0m[31m-    ActorAuthenticator, ActorClaim, ActorKind, AuthError,
+[0m[31m-};
+[0m[32m+use crate::identity::{ActorAuthenticator, ActorClaim, ActorKind, AuthError};
+[0m use crate::persistence::db::DatabaseConnectionPool;
+ use crate::persistence::migrations::apply_cancellation_schema;
+ use crate::tasks::state::TaskState;
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:169:
+     TaskNotFound(Uuid),
+     #[error("task {task_id} is already terminal ({state})")]
+     TaskAlreadyTerminal { task_id: Uuid, state: String },
+[31m-    #[error("task {task_id} already has a completed cancellation record; it cannot be cancelled again")]
+[0m[32m+    #[error(
+[0m[32m+        "task {task_id} already has a completed cancellation record; it cannot be cancelled again"
+[0m[32m+    )]
+[0m     AlreadyResolved { task_id: Uuid },
+     #[error("no active cancellation intent for task {0}")]
+     NoActiveIntent(Uuid),
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:176:
+     #[error("execution {execution_id} is not the active execution for task {task_id}")]
+[31m-    StaleExecution {
+[0m[31m-        task_id: Uuid,
+[0m[31m-        execution_id: Uuid,
+[0m[31m-    },
+[0m[32m+    StaleExecution { task_id: Uuid, execution_id: Uuid },
+[0m     #[error("cancellation {task_id} is {status}, not Escalated")]
+     NotEscalated { task_id: Uuid, status: String },
+     #[error("unknown cancellation status: '{0}'")]
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:238:
+             "INSERT INTO task_executions \
+              (execution_id, task_id, agent_id, started_at, state) \
+              VALUES (?1, ?2, ?3, ?4, 'Active')",
+[31m-            params![
+[0m[31m-                execution_id.to_string(),
+[0m[31m-                task_id.to_string(),
+[0m[31m-                agent_id,
+[0m[31m-                now,
+[0m[31m-            ],
+[0m[32m+            params![execution_id.to_string(), task_id.to_string(), agent_id, now,],
+[0m         )?;
+         transaction.commit()?;
+         Ok(execution_id)
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:250:
+     }
+ 
+[31m-    pub fn end_execution(
+[0m[31m-        &self,
+[0m[31m-        execution_id: Uuid,
+[0m[31m-        reason: &str,
+[0m[31m-    ) -> Result<(), CancellationError> {
+[0m[32m+    pub fn end_execution(&self, execution_id: Uuid, reason: &str) -> Result<(), CancellationError> {
+[0m         let connection = self.pool.connection()?;
+         connection.execute(
+             "UPDATE task_executions \
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:465:
+         let mut connection = self.pool.connection()?;
+         let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate)?;
+ 
+[31m-        let state = load_state(&transaction, task_id)?
+[0m[31m-            .ok_or(CancellationError::TaskNotFound(task_id))?;
+[0m[32m+        let state =
+[0m[32m+            load_state(&transaction, task_id)?.ok_or(CancellationError::TaskNotFound(task_id))?;
+[0m 
+         if let Some(existing) = load_intent(&transaction, task_id)? {
+             if existing.status == IntentStatus::Completed {
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:758:
+                 status: intent.status.as_str().to_string(),
+             });
+         }
+[31m-        let state = load_state(&transaction, task_id)?
+[0m[31m-            .ok_or(CancellationError::TaskNotFound(task_id))?;
+[0m[32m+        let state =
+[0m[32m+            load_state(&transaction, task_id)?.ok_or(CancellationError::TaskNotFound(task_id))?;
+[0m 
+         let (target, event) = match resolution {
+             EscalationResolution::ConfirmCancellation => {
+Diff in \\?\C:\Users\Penjy\Dev\skyos\kernel\src\delegation\cancellation.rs:1005:
+ }
+ 
+ /// Descendants that have not reached a terminal state.
+[31m-fn open_descendants(
+[0m[31m-    connection: &Connection,
+[0m[31m-    task_id: Uuid,
+[0m[31m-) -> Result<i64, CancellationError> {
+[0m[32m+fn open_descendants(connection: &Connection, task_id: Uuid) -> Result<i64, CancellationError> {
+[0m     let count: i64 = connection.query_row(
+         "WITH RECURSIVE d(task_id) AS ( \
+              SELECT task_id FROM tasks WHERE parent_task_id = ?1 \

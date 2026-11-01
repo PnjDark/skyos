@@ -195,7 +195,18 @@ impl<'a> GitToolRegistry<'a> {
         let commit_hash = match &hash_result.output {
             ToolOutput::Text(t) => t.trim().to_string(),
             _ => {
-                return self.fail(ctx, "Failed to read commit hash after commit".to_string());
+                return ToolResult {
+                    invocation_id: ctx.invocation_id,
+                    status: ToolStatus::OutcomeUnknown,
+                    output: hash_result.output,
+                    artifact: None,
+                    error_message: Some(format!(
+                        "Git commit completed but its commit hash could not be established: {}",
+                        hash_result
+                            .error_message
+                            .unwrap_or_else(|| "git rev-parse returned no text".to_string())
+                    )),
+                };
             }
         };
 
@@ -214,14 +225,19 @@ impl<'a> GitToolRegistry<'a> {
         ) {
             Ok(a) => a,
             Err(e) => {
-                return self.fail(
-                    ctx,
-                    format!("Commit succeeded but artifact registration failed: {e}"),
-                );
+                return ToolResult {
+                    invocation_id: ctx.invocation_id,
+                    status: ToolStatus::OutcomeUnknown,
+                    output: ToolOutput::Text(commit_hash.clone()),
+                    artifact: None,
+                    error_message: Some(format!(
+                        "Git commit {commit_hash} succeeded but artifact registration failed: {e}"
+                    )),
+                };
             }
         };
 
-        let _ = self.event_bus.emit_event(
+        if let Err(error) = self.event_bus.emit_event(
             Some(&ctx.task_id.to_string()),
             EVENT_GIT_OPERATION_COMPLETED,
             json!({
@@ -230,7 +246,17 @@ impl<'a> GitToolRegistry<'a> {
                 "commit_hash": commit_hash,
                 "artifact_id": artifact.artifact_id,
             }),
-        );
+        ) {
+            return ToolResult {
+                invocation_id: ctx.invocation_id,
+                status: ToolStatus::AuditPersistenceFailed,
+                output: ToolOutput::Text(commit_hash),
+                artifact: Some(artifact),
+                error_message: Some(format!(
+                    "Git commit and artifact registration succeeded, but completion audit failed: {error}"
+                )),
+            };
+        }
 
         ToolResult {
             invocation_id: ctx.invocation_id,
@@ -337,17 +363,33 @@ impl<'a> GitToolRegistry<'a> {
         if result.status == ToolStatus::Succeeded {
             let output_text = match &result.output {
                 ToolOutput::ProcessResult { stdout, .. } => stdout.clone(),
-                _ => String::new(),
+                _ => {
+                    return self.fail(
+                        ctx,
+                        "Git subprocess succeeded without returning process output".to_string(),
+                    )
+                }
             };
-            let _ = self.event_bus.emit_event(
+            let output_preview: String = output_text.chars().take(256).collect();
+            if let Err(error) = self.event_bus.emit_event(
                 Some(&ctx.task_id.to_string()),
                 EVENT_GIT_OPERATION_COMPLETED,
                 json!({
                     "invocation_id": ctx.invocation_id,
                     "operation": operation,
-                    "output_preview": &output_text[..output_text.len().min(256)],
+                    "output_preview": output_preview,
                 }),
-            );
+            ) {
+                return ToolResult {
+                    invocation_id: ctx.invocation_id,
+                    status: ToolStatus::AuditPersistenceFailed,
+                    output: ToolOutput::Text(output_text),
+                    artifact: None,
+                    error_message: Some(format!(
+                        "Git {operation} succeeded, but completion audit failed: {error}"
+                    )),
+                };
+            }
             ToolResult {
                 invocation_id: ctx.invocation_id,
                 status: ToolStatus::Succeeded,
@@ -359,31 +401,44 @@ impl<'a> GitToolRegistry<'a> {
             let msg = result
                 .error_message
                 .unwrap_or_else(|| format!("git {operation} failed"));
-            let _ = self.event_bus.emit_event(
-                Some(&ctx.task_id.to_string()),
-                EVENT_GIT_OPERATION_FAILED,
-                json!({
-                    "invocation_id": ctx.invocation_id,
-                    "operation": operation,
-                    "error": msg,
-                }),
-            );
+            let status = if matches!(operation, "stage" | "commit" | "branch_create" | "checkout") {
+                ToolStatus::OutcomeUnknown
+            } else {
+                result.status
+            };
+            let audit_error = self
+                .event_bus
+                .emit_event(
+                    Some(&ctx.task_id.to_string()),
+                    EVENT_GIT_OPERATION_FAILED,
+                    json!({
+                        "invocation_id": ctx.invocation_id,
+                        "operation": operation,
+                        "error": msg,
+                    }),
+                )
+                .err()
+                .map(|error| format!("; failed to persist Git failure audit: {error}"))
+                .unwrap_or_default();
             ToolResult {
                 invocation_id: ctx.invocation_id,
-                status: result.status,
+                status,
                 output: ToolOutput::Empty,
                 artifact: None,
-                error_message: Some(msg),
+                error_message: Some(format!("{msg}{audit_error}")),
             }
         }
     }
 
     fn fail(&self, ctx: &ToolContext, message: String) -> ToolResult {
-        let _ = self.event_bus.emit_event(
+        let message = match self.event_bus.emit_event(
             Some(&ctx.task_id.to_string()),
             EVENT_GIT_OPERATION_FAILED,
             json!({ "invocation_id": ctx.invocation_id, "error": message }),
-        );
+        ) {
+            Ok(_) => message,
+            Err(error) => format!("{message}; failed to persist Git failure audit: {error}"),
+        };
         ToolResult {
             invocation_id: ctx.invocation_id,
             status: ToolStatus::Failed,

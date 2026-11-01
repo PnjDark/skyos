@@ -17,12 +17,17 @@ pub trait GitAdapter: Send + Sync {
         branch: &str,
         base_commit: Option<&str>,
     ) -> Result<(), ProvisionError>;
-    fn remove_worktree(&self, repo_path: &Path, worktree_path: &Path) -> Result<(), ProvisionError>;
+    fn remove_worktree(&self, repo_path: &Path, worktree_path: &Path)
+        -> Result<(), ProvisionError>;
 
     /// Re-align Git's worktree metadata after the staged directory is renamed
     /// into its final location. A real adapter runs `git worktree repair`;
     /// mocks may no-op.
-    fn repair_worktree(&self, _repo_path: &Path, _worktree_path: &Path) -> Result<(), ProvisionError> {
+    fn repair_worktree(
+        &self,
+        _repo_path: &Path,
+        _worktree_path: &Path,
+    ) -> Result<(), ProvisionError> {
         Ok(())
     }
 }
@@ -189,7 +194,10 @@ impl RepositoryProvisioner {
             }
             Err(e) => return Err(ProvisionError::Io(e)),
         };
-        if let Err(e) = lock.write_all(chrono::Utc::now().to_rfc3339().as_bytes()).await {
+        if let Err(e) = lock
+            .write_all(chrono::Utc::now().to_rfc3339().as_bytes())
+            .await
+        {
             drop(lock);
             let _ = tokio::fs::remove_file(&lock_file).await;
             return Err(ProvisionError::Io(e));
@@ -210,7 +218,9 @@ impl RepositoryProvisioner {
         }
 
         if let Err(e) = tokio::fs::rename(&tmp_worktree_dir, &worktree_dir).await {
-            let _ = self.git_adapter.remove_worktree(&repo_path, &tmp_worktree_dir);
+            let _ = self
+                .git_adapter
+                .remove_worktree(&repo_path, &tmp_worktree_dir);
             let _ = tokio::fs::remove_file(&lock_file).await;
             return Err(ProvisionError::Io(e));
         }
@@ -279,9 +289,7 @@ impl RepositoryProvisioner {
             tracing::warn!(task_id = %task_id, "Found orphaned provisioning lock; recovering");
             let tmp_dir = sky_dir.join("tmp").join(format!("prov_{}", task_id));
             let final_dir = sky_dir.join("worktrees").join(task_id);
-            let context_file = sky_dir
-                .join("workspaces")
-                .join(format!("{}.json", task_id));
+            let context_file = sky_dir.join("workspaces").join(format!("{}.json", task_id));
 
             if tmp_dir.exists() {
                 let _ = self.git_adapter.remove_worktree(&repo_path, &tmp_dir);

@@ -165,10 +165,13 @@ impl<'a> ProcessToolExecutor<'a> {
                 let tool_status = if status.success() {
                     ToolStatus::Succeeded
                 } else {
-                    ToolStatus::Failed
+                    ToolStatus::OutcomeUnknown
                 };
-                let error_message =
-                    (!status.success()).then(|| format!("Process exited with code {exit_code}"));
+                let error_message = (!status.success()).then(|| {
+                    format!(
+                        "Process exited with code {exit_code}; its side effects require reconciliation"
+                    )
+                });
                 if let Err(error) = self.event_bus.emit_event(
                     Some(&ctx.task_id.to_string()),
                     EVENT_PROCESS_COMPLETED,
@@ -181,7 +184,7 @@ impl<'a> ProcessToolExecutor<'a> {
                 ) {
                     return self.record_process_failure(
                         ctx,
-                        ToolStatus::Failed,
+                        ToolStatus::AuditPersistenceFailed,
                         format!("Process completed but completion audit failed: {error}"),
                     );
                 }

@@ -10,7 +10,8 @@ use kernel::artifacts::registry::ArtifactRegistry;
 use kernel::domain::DomainStore;
 use kernel::events::EventBus;
 use kernel::permissions::issuer::GrantIssuer;
-use kernel::permissions::types::CapabilityGrant;
+use kernel::permissions::types::{CapabilityGrant, CapabilityKind};
+use kernel::tasks::checkpoint::SideEffectSemantics;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::path::Path;
@@ -81,6 +82,39 @@ impl<'a> UnifiedToolRegistry<'a> {
     pub fn with_domain_store(mut self, store: &'a DomainStore) -> Self {
         self.domain_store = Some(store);
         self
+    }
+
+    /// Return the runtime-owned retry contract for an operation. Unknown
+    /// operations default to AtMostOnce so recovery never retries them blindly.
+    pub fn side_effect_semantics(tool_id: &str, operation_id: &str) -> SideEffectSemantics {
+        match (tool_id, operation_id) {
+            ("filesystem", "read_file")
+            | ("git", "status" | "diff" | "log")
+            | ("domain", "query")
+            | ("hardware", "capture_frame") => SideEffectSemantics::Idempotent,
+            ("filesystem", "write_file")
+            | ("git", "stage" | "commit" | "branch_create" | "checkout")
+            | ("domain", "mutate")
+            | ("network", "bind_socket") => SideEffectSemantics::Reconcilable,
+            ("process", "execute")
+            | ("container", "run")
+            | ("hardware", "serial_write")
+            | ("network", "send_datagram") => SideEffectSemantics::AtMostOnce,
+            _ => SideEffectSemantics::AtMostOnce,
+        }
+    }
+
+    /// Return the capability family a registered operation requires.
+    ///
+    /// This is derived from the tool manifest, not from anything the agent
+    /// says.  Recovery uses it to narrow a persisted capability intent down to
+    /// the authority the pending operation actually needs; an operation whose
+    /// requirement cannot be derived is never re-authorized.
+    pub fn required_capability_kind(tool_id: &str, operation_id: &str) -> Option<CapabilityKind> {
+        Self::export_schemas()
+            .into_iter()
+            .find(|schema| schema.tool_id == tool_id && schema.operation_id == operation_id)
+            .and_then(|schema| CapabilityKind::from_name(&schema.required_capability))
     }
 
     /// Primary entry point.

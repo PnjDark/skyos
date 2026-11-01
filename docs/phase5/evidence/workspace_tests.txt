@@ -1,0 +1,412 @@
+   Compiling agents v0.1.0 (C:\Users\Penjy\Dev\skyos\agents)
+   Compiling skyos-crash-harness v0.1.0 (C:\Users\Penjy\Dev\skyos\crash_harness)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.75s
+     Running unittests src\lib.rs (target\debug\deps\agents-249de74b7e8be4f8.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\crash_recovery_tests.rs (target\debug\deps\crash_recovery_tests-3d3fa068b912fabe.exe)
+
+running 27 tests
+test dispatched_reconcilable_checkpoint_is_outcome_unknown ... ok
+test a_grant_is_never_issued_for_a_dispatched_outcome_unknown_step ... ok
+test failed_recovery_audit_rolls_back_the_classification ... ok
+test dispatched_at_most_once_checkpoint_is_outcome_unknown_not_failed ... ok
+test dispatched_idempotent_checkpoint_is_outcome_unknown_not_retryable ... ok
+test agent_identity_mismatch_is_refused ... ok
+test an_underivable_capability_requirement_is_refused ... ok
+test an_under_declared_capability_intent_is_refused ... ok
+test missing_authorization_context_blocks_the_retry ... ok
+test indeterminate_evidence_leaves_the_step_unknown ... ok
+test granted_authorization_is_persisted_and_audited ... ok
+test pending_checkpoint_becomes_retry_ready ... ok
+test observed_effect_marks_the_step_succeeded ... ok
+test multiple_tasks_are_classified_independently ... ok
+test permit_binds_to_the_recorded_invocation_identity ... ok
+test obligations_report_pending_recovery_work ... ok
+test reconciliation_refuses_a_step_that_is_not_unknown ... ok
+test repeated_recovery_is_idempotent ... ok
+test proven_absent_effect_authorizes_a_retry ... ok
+test policy_tightening_while_offline_refuses_the_retry_and_fails_the_task ... ok
+test requeue_of_a_task_that_is_not_blocked_is_refused ... ok
+test requeue_after_reconciliation_is_attributed_and_preserves_history ... ok
+test requeue_is_refused_while_uncertainty_remains ... ok
+test retry_requires_a_fresh_grant_scoped_to_the_recorded_intent ... ok
+test terminal_checkpoints_are_not_recovered ... ok
+test revoked_agent_cannot_be_reauthorized ... ok
+test the_fresh_grant_is_narrowed_to_the_operation_requirement ... ok
+
+test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.86s
+
+     Running tests\executor_tests.rs (target\debug\deps\executor_tests-f84f44ffa64907f0.exe)
+
+running 12 tests
+test test_missing_task_returns_internal_error ... ok
+test test_immediate_completion ... ok
+test retry_ready_checkpoint_blocks_implicit_resumption ... ok
+test outcome_unknown_checkpoint_blocks_the_task_until_reconciled ... ok
+test test_complete_after_real_step ... ok
+test resume_with_diverging_arguments_is_rejected_without_side_effects ... ok
+test test_no_grant_fails_closed ... ok
+test authorized_retry_redispatches_the_recorded_invocation ... ok
+test test_revoked_grant_fails_closed ... ok
+test test_repair_budget_exhaustion ... ok
+test git_commit_audit_failure_is_checkpointed_as_unknown_without_repair ... ok
+test test_step_budget_exhaustion ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+     Running unittests src\lib.rs (target\debug\deps\kernel-4513dbe59d9ca7a7.exe)
+
+running 35 tests
+test permissions::policy::tests::drift_detects_version_and_identity_changes ... ok
+test permissions::policy::tests::expired_rule_does_not_authorize ... ok
+test permissions::policy::tests::empty_capability_set_is_refused ... ok
+test permissions::policy::tests::agents_are_isolated_from_each_other ... ok
+test permissions::policy::tests::git_write_rule_covers_git_read_but_not_the_reverse ... ok
+test permissions::policy::tests::narrower_scope_is_permitted_and_wider_scope_is_denied ... ok
+test permissions::policy::tests::revoked_agent_is_denied_even_with_a_matching_rule ... ok
+test permissions::tests::tests::expired_or_revoked_grant_denied ... ok
+test permissions::tests::tests::process_exec_arg_prefix_and_workdir_enforced ... ok
+test permissions::tests::tests::path_traversal_attack_blocked ... ok
+test persistence::db::tests::database_connection_creates_runtime_state_and_enables_sqlite_pragmas ... ok
+test tasks::checkpoint::tests::argument_order_does_not_change_the_fingerprint ... ok
+test tasks::checkpoint::tests::different_commit_messages_produce_different_idempotency_keys ... ok
+test artifacts::registry::tests::preserves_the_original_source_and_verifies_stored_bytes ... ok
+test artifacts::registry::tests::registers_and_retrieves_content_addressable_artifacts ... ok
+test tasks::checkpoint::tests::integral_numbers_are_canonicalized ... ok
+test artifacts::registry::tests::rejects_duplicate_registration_and_records_lineage ... ok
+test events::tests::emit_event_persists_and_reads_event_by_task_id ... ok
+test tasks::checkpoint::tests::null_and_omitted_fields_are_different_proposals ... ok
+test recovery::authorization::tests::authorization_context_round_trips ... ok
+test tasks::checkpoint::tests::string_escaping_normalizes_to_the_parsed_value ... ok
+test tasks::state::tests::invalid_transition_is_rejected ... ok
+test tasks::state::tests::reconstructs_completed_state_from_event_history ... ok
+test tasks::state::tests::task_state_round_trips_through_string ... ok
+test tasks::state::tests::valid_transition_is_allowed ... ok
+test recovery::authorization::tests::denial_decisions_are_append_only ... ok
+test recovery::reconciliation::tests::records_round_trip_in_order ... ok
+test tests::kernel_library_loads ... ok
+test tasks::checkpoint::tests::identical_key_with_different_arguments_is_a_conflict_not_a_replay ... ok
+test tasks::checkpoint::tests::dispatched_rows_cannot_be_marked_retry_ready_without_evidence ... ok
+test tasks::checkpoint::tests::mark_outcome_unknown_is_persisted ... ok
+test tasks::checkpoint::tests::list_unresolved_returns_dispatched_and_pending ... ok
+test tasks::checkpoint::tests::pending_then_dispatched_then_succeeded ... ok
+test tasks::store::tests::creates_and_reads_a_task_from_sqlite ... ok
+test tasks::store::tests::transitions_a_task_state_and_persists_a_transition_event ... ok
+
+test result: ok. 35 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running unittests src\lib.rs (target\debug\deps\models-36f75c4e97198dc5.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\debug\deps\sky_cli-b338f7a376f66fd8.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target\debug\deps\sky-92cf2c11363e9833.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\workspace_gate_tests.rs (target\debug\deps\workspace_gate_tests-ae17cfc8fff231d7.exe)
+
+running 12 tests
+test recovery_emits_durable_audit_event ... ok
+test ledger_failure_before_mutation_prevents_any_disk_change ... ok
+test grant_scoped_to_other_project_is_rejected ... ok
+test final_ledger_failure_rolls_back_completed_workspace ... ok
+test execution_failure_emits_failed_with_execution_stage ... ok
+test authorized_provision_emits_started_and_provisioned ... ok
+test traversal_project_id_rejected_without_mutation ... ok
+test unknown_task_is_rejected_before_authorization ... ok
+test divergent_request_for_same_task_is_a_collision ... ok
+test unauthorized_missing_capability_fails_closed_before_mutation ... ok
+test interrupted_provisioning_blocks_then_recovers ... ok
+test repeated_identical_request_returns_same_workspace ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+
+     Running unittests src\main.rs (target\debug\deps\sky_crash_worker-2068bc88cea1edfe.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\process_kill.rs (target\debug\deps\process_kill-7950d39d07fd3df8.exe)
+
+running 10 tests
+test crash_after_pending_leaves_no_side_effect ... ok
+test offline_policy_tightening_refuses_the_retry_end_to_end ... ok
+test crash_after_result_persistence_is_a_no_op_for_recovery ... ok
+test pending_crash_is_retry_ready_and_retries_exactly_once ... ok
+test crash_after_dispatch_blocks_the_task_without_duplicating ... ok
+test externally_killed_process_leaves_a_durable_unknown_outcome ... ok
+test proven_absent_effect_authorizes_a_single_retry ... ok
+test crash_after_the_side_effect_preserves_the_commit_and_never_replays_it ... ok
+test repeated_recovery_in_fresh_processes_is_idempotent ... ok
+test requeue_is_refused_while_the_outcome_is_unknown ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 4.48s
+
+     Running unittests src\lib.rs (target\debug\deps\skyos_provisioner-c22017cf4c4210a3.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\provisioner_tests.rs (target\debug\deps\provisioner_tests-bb3b349cc7db4d13.exe)
+
+running 9 tests
+test test_repository_not_found ... ok
+test test_path_traversal_rejection ... ok
+test test_dirty_repository_block_policy ... ok
+test test_interrupted_provisioning_recovery ... ok
+test test_dirty_repository_isolate_policy_leaves_main_tree_untouched ... ok
+test test_clean_repository_provisioning ... ok
+test test_concurrent_duplicate_requests_create_single_worktree ... ok
+test test_worktree_collision_detected ... ok
+test test_repeated_requests_do_not_duplicate_or_corrupt ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running unittests src\lib.rs (target\debug\deps\skyos_transform-fc9a1ec24f024253.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\occ_tests.rs (target\debug\deps\occ_tests-73545c8838adc936.exe)
+
+running 12 tests
+test checksum_without_expected_revision_is_inconsistent ... ok
+test expected_revision_with_no_head_conflicts ... ok
+test dry_run_preflight_reports_without_mutating ... ok
+test expectation_naming_a_different_artifact_is_rejected ... ok
+test first_write_when_head_exists_conflicts ... ok
+test first_write_on_empty_artifact_is_accepted ... ok
+test failed_proposal_creates_no_revision_and_does_not_move_head ... ok
+test matching_revision_and_checksum_commits ... ok
+test matching_revision_with_wrong_checksum_conflicts ... ok
+test retry_after_success_conflicts_instead_of_silently_succeeding ... ok
+test concurrent_proposals_from_same_base_have_exactly_one_winner ... ok
+test stale_revision_conflicts_and_reports_actual_head ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.29s
+
+     Running tests\revision_store_tests.rs (target\debug\deps\revision_store_tests-51871eb37f14d6cd.exe)
+
+running 9 tests
+test first_write_head_is_absent_until_first_append ... ok
+test corrupted_blob_is_detected_on_read ... ok
+test stored_bytes_reproduce_their_sha256 ... ok
+test separate_store_instances_share_durable_state ... ok
+test identical_content_shares_one_blob_but_keeps_distinct_revisions ... ok
+test missing_blob_reports_not_found_not_wrong_bytes ... ok
+test appends_chain_parent_revisions_into_a_dag ... ok
+test unknown_revision_lookup_fails_cleanly ... ok
+test concurrent_appends_never_corrupt_revision_metadata ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
+
+     Running tests\transaction_tests.rs (target\debug\deps\transaction_tests-79202bc76075da15.exe)
+
+running 14 tests
+Junction created for C:\Users\Penjy\AppData\Local\Temp\dsh-FzhLhK\.tmpUVTwoZ\workspace\link <<===>> C:\Users\Penjy\AppData\Local\Temp\dsh-FzhLhK\.tmpUVTwoZ\outside
+test duplicate_canonical_targets_are_rejected_before_publication ... ok
+test first_write_never_silently_overwrites_an_untracked_file ... ok
+test junction_escape_is_rejected_before_publication ... ok
+test commit_publishes_manifest_revisions_heads_and_journal_together ... ok
+test crash_after_commit_before_first_file_is_recovered_on_restart ... ok
+test lost_journal_completion_write_is_safe_to_retry ... ok
+test crash_halfway_through_materialization_completes_without_duplicates ... ok
+test concurrent_overlapping_batches_have_exactly_one_winner ... ok
+test replaying_the_same_proposal_returns_the_existing_manifest ... ok
+test reusing_a_transaction_id_with_different_content_conflicts ... ok
+test materialize_writes_all_files_marks_batch_materialized_and_is_idempotent ... ok
+test unsafe_paths_are_rejected_before_publication ... ok
+test stale_expectation_rolls_back_the_entire_batch ... ok
+test target_changed_externally_is_detected_and_not_overwritten ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.63s
+
+     Running unittests src\lib.rs (target\debug\deps\tools-3cb11f3f25ffebeb.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\domain_tests.rs (target\debug\deps\domain_tests-4de6ba9585e58caa.exe)
+
+running 21 tests
+test domain_registration_creates_all_tables_idempotently ... ok
+test dispatcher_without_domain_store_fails_gracefully ... ok
+test cross_namespace_join_attack_blocked_by_authorizer ... ok
+test cross_namespace_read_attack_blocked_by_authorizer ... ok
+test cte_write_attack_in_query_blocked_by_authorizer ... ok
+test cross_namespace_mutate_attack_blocked_by_authorizer ... ok
+test audit_events_persisted_for_domain_operations ... ok
+test academy_socratic_session_flow ... ok
+test mutate_rejects_select_sql ... ok
+test namespace_validation_rejects_malformed_string ... ok
+test fitness_mutate_and_query_flow ... ok
+test finance_multi_rail_ledger_flow ... ok
+test policy_different_namespace_grant_denied ... ok
+test policy_expired_and_revoked_grant_denied ... ok
+test policy_read_only_grant_rejects_mutate ... ok
+test pantry_mutate_and_query_flow ... ok
+test pragma_execution_blocked_by_authorizer ... ok
+test query_rejects_non_select_sql ... ok
+test system_table_inspection_blocked_by_authorizer ... ok
+test productivity_items_and_vault_flow ... ok
+test transaction_rollback_on_constraint_violation ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.21s
+
+     Running tests\git_container_tests.rs (target\debug\deps\git_container_tests-c6e861985ed720b2.exe)
+
+running 16 tests
+test container_denial_emits_audit_event ... ok
+test container_expired_grant_is_denied ... ok
+test container_revoked_grant_is_denied ... ok
+test git_read_only_grant_rejects_branch_create ... ok
+test git_denied_operation_emits_permission_denied_event ... ok
+test container_rejects_image_not_on_allowlist ... ok
+test git_read_only_grant_rejects_commit ... ok
+test git_rejects_absolute_path_in_stage ... ok
+test git_read_only_grant_rejects_stage ... ok
+test git_rejects_empty_commit_message ... ok
+test git_rejects_traversal_in_stage_paths ... ok
+test git_surfaces_policy_and_failure_audit_persistence_errors ... ok
+test git_write_grant_rejects_operation_outside_repo_root ... ok
+test container_wildcard_allowlist_permits_any_image ... ok
+test successful_git_commit_with_failed_completion_audit_is_outcome_unknown ... ok
+test git_rejects_unsafe_branch_name_with_shell_chars ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.85s
+
+     Running tests\hardware_network_tests.rs (target\debug\deps\hardware_network_tests-8140eaac9fa76d69.exe)
+
+running 29 tests
+test bind_addr_accepts_loopback ... ok
+test bind_addr_accepts_private_subnets ... ok
+test bind_addr_rejects_invalid_string ... ok
+test bind_addr_rejects_public_ip ... ok
+test device_node_rejects_block_device ... ok
+test device_node_rejects_empty_string ... ok
+test device_node_rejects_null_byte ... ok
+test device_node_rejects_traversal_sequence ... ok
+test device_node_accepts_camera_and_serial ... ok
+test hardware_and_network_schemas_contain_no_grant_fields ... ok
+test dispatcher_rejects_unknown_hardware_operation ... ok
+test dispatcher_rejects_unknown_network_operation ... ok
+test hardware_capture_frame_denied_for_blocked_device ... ok
+test hardware_serial_write_denied_with_read_only_grant ... ok
+test hardware_capture_frame_denied_without_grant ... ok
+test dispatcher_routes_network_bind_socket ... ok
+test hardware_capture_frame_succeeds_with_valid_grant ... ok
+test dispatcher_routes_hardware_capture_frame ... ok
+test hardware_serial_write_rejects_invalid_baud_rate ... ok
+test port_accepts_ephemeral_range ... ok
+test port_rejects_privileged_ports ... ok
+test schema_export_covers_hardware_and_network ... ok
+test network_bind_socket_rejects_privileged_port ... ok
+test network_bind_socket_denied_without_matching_grant ... ok
+test network_bind_socket_rejects_public_address ... ok
+test hardware_serial_write_succeeds_with_write_grant ... ok
+test network_send_datagram_rejects_oversized_payload ... ok
+test network_bind_socket_succeeds_with_valid_grant ... ok
+test network_send_datagram_succeeds_with_valid_grant ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.40s
+
+     Running tests\registry_tests.rs (target\debug\deps\registry_tests-c3145d44e1b45768.exe)
+
+running 19 tests
+test dispatcher_rejects_missing_content_for_write ... ok
+test dispatcher_rejects_missing_message_for_git_commit ... ok
+test dispatcher_rejects_missing_relative_path_for_read ... ok
+test dispatcher_rejects_non_string_args_array_for_process ... ok
+test dispatcher_records_idempotency_key_in_attempted_event ... ok
+test dispatcher_rejects_grant_scoped_to_different_workspace ... ok
+test dispatcher_emits_tool_invocation_attempted_event ... ok
+test dispatcher_rejects_expired_grant_for_filesystem_read ... ok
+test schema_export_contains_no_grant_or_secret_fields ... ok
+test schema_export_covers_all_four_tool_families ... ok
+test schema_export_is_valid_json ... ok
+test schema_export_required_fields_are_present ... ok
+test dispatcher_rejects_unknown_container_operation ... ok
+test dispatcher_rejects_unknown_filesystem_operation ... ok
+test dispatcher_rejects_unknown_git_operation ... ok
+test dispatcher_rejects_revoked_grant_for_filesystem_write ... ok
+test dispatcher_rejects_unknown_process_operation ... ok
+test dispatcher_rejects_unknown_tool_id ... ok
+test dispatcher_routes_filesystem_write_and_emits_audit_event ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.44s
+
+     Running tests\tool_runtime_tests.rs (target\debug\deps\tool_runtime_tests-914782a9f203d34f.exe)
+
+running 9 tests
+test process_child_emits_large_output ... ok
+test process_child_sleeps ... ok
+test filesystem_rejects_traversal_and_symlink_escape ... ok
+test process_executor_denies_unauthorized_executable_and_persists_audit ... ok
+test filesystem_rejects_oversized_reads_before_reading_contents ... ok
+test process_executor_bounds_stdout_and_stderr ... ok
+test failed_filesystem_rename_cleans_up_staged_file ... ok
+test filesystem_write_is_atomic_registers_cas_and_is_audited ... ok
+test process_executor_kills_and_reaps_timed_out_child ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.16s
+
+   Doc-tests agents
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests kernel
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests models
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests sky_cli
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests skyos_provisioner
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests skyos_transform
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests tools
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

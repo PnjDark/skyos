@@ -1,0 +1,13 @@
+   Compiling sky-cli v0.1.0 (C:\Users\Penjy\Dev\skyos\clients\cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.84s
+     Running tests\reconcile_gate_tests.rs (target\debug\deps\reconcile_gate_tests-48ffc843a6cd1e05.exe)
+
+running 5 tests
+test reconcile_command_rejects_a_verdict_shaped_evidence_argument ... ok
+test the_engine_denies_a_grant_scoped_to_another_task ... ok
+test reconcile_command_refuses_when_the_effect_is_absent_and_says_so ... ok
+test reconcile_command_refuses_a_wrong_invocation_id ... ok
+test reconcile_command_records_a_durable_decision_from_a_real_probe ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.21s
+

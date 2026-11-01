@@ -5,6 +5,7 @@ pub mod git;
 pub mod hardware;
 pub mod network;
 pub mod process;
+pub mod reconciler;
 pub mod registry;
 pub mod types;
 

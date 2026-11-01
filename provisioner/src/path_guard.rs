@@ -67,7 +67,10 @@ impl PathGuard {
         // the sandbox. `symlink_metadata` distinguinks links from regular nodes.
         let mut cursor: &Path = &resolved;
         loop {
-            if cursor.symlink_metadata().is_ok_and(|m| m.file_type().is_symlink()) {
+            if cursor
+                .symlink_metadata()
+                .is_ok_and(|m| m.file_type().is_symlink())
+            {
                 let link_target = std::fs::read_link(cursor).map_err(ProvisionError::Io)?;
                 let absolute_target = if link_target.is_absolute() {
                     link_target
@@ -77,12 +80,11 @@ impl PathGuard {
                         .unwrap_or(&self.sandbox_root)
                         .join(link_target)
                 };
-                let canonical_link =
-                    dunce::canonicalize(&absolute_target).map_err(|_| {
-                        ProvisionError::SymlinkEscape {
-                            path: cursor.to_path_buf(),
-                        }
-                    })?;
+                let canonical_link = dunce::canonicalize(&absolute_target).map_err(|_| {
+                    ProvisionError::SymlinkEscape {
+                        path: cursor.to_path_buf(),
+                    }
+                })?;
                 if !canonical_link.starts_with(&self.sandbox_root) {
                     return Err(ProvisionError::SymlinkEscape {
                         path: cursor.to_path_buf(),

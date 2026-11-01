@@ -1,0 +1,43 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.20s
+     Running tests\crash_recovery_tests.rs (target\debug\deps\crash_recovery_tests-3d3fa068b912fabe.exe)
+
+running 36 tests
+test a_grant_issued_to_another_actor_cannot_be_borrowed ... ok
+test agent_actor_cannot_reconcile_its_own_operation ... ok
+test an_expired_reconciliation_grant_is_refused ... ok
+test a_grant_is_never_issued_for_a_dispatched_outcome_unknown_step ... ok
+test an_unauditable_reconciliation_changes_nothing ... ok
+test agent_identity_mismatch_is_refused ... ok
+test a_probe_that_observes_nothing_cannot_unblock_a_retry ... ok
+test a_caller_cannot_nominate_a_baseline_the_runtime_never_recorded ... ok
+test dispatched_reconcilable_checkpoint_is_outcome_unknown ... ok
+test dispatched_at_most_once_checkpoint_is_outcome_unknown_not_failed ... ok
+test failed_recovery_audit_rolls_back_the_classification ... ok
+test dispatched_idempotent_checkpoint_is_outcome_unknown_not_retryable ... ok
+test an_underivable_capability_requirement_is_refused ... ok
+test an_under_declared_capability_intent_is_refused ... ok
+test granted_authorization_is_persisted_and_audited ... ok
+test indeterminate_evidence_leaves_the_step_unknown ... ok
+test missing_authorization_context_blocks_the_retry ... ok
+test pending_checkpoint_becomes_retry_ready ... ok
+test permit_binds_to_the_recorded_invocation_identity ... ok
+test observed_effect_marks_the_step_succeeded ... ok
+test obligations_report_pending_recovery_work ... ok
+test multiple_tasks_are_classified_independently ... ok
+test proven_absent_effect_authorizes_a_retry ... ok
+test policy_tightening_while_offline_refuses_the_retry_and_fails_the_task ... ok
+test reconciliation_capability_is_scoped_to_one_task ... ok
+test reconciliation_refuses_a_step_that_is_not_unknown ... ok
+test reconciliation_records_authenticated_provenance ... ok
+test repeated_recovery_is_idempotent ... ok
+test requeue_of_a_task_that_is_not_blocked_is_refused ... ok
+test reconciliation_without_a_probe_is_refused ... ok
+test requeue_is_refused_while_uncertainty_remains ... ok
+test requeue_after_reconciliation_is_attributed_and_preserves_history ... ok
+test retry_requires_a_fresh_grant_scoped_to_the_recorded_intent ... ok
+test terminal_checkpoints_are_not_recovered ... ok
+test the_fresh_grant_is_narrowed_to_the_operation_requirement ... ok
+test revoked_agent_cannot_be_reauthorized ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.50s
+

@@ -1,0 +1,18 @@
+   Compiling kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+   Compiling tools v0.1.0 (C:\Users\Penjy\Dev\skyos\tools)
+   Compiling sky-cli v0.1.0 (C:\Users\Penjy\Dev\skyos\clients\cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 15.93s
+     Running tests\cli_process_reconcile_tests.rs (target\debug\deps\cli_process_reconcile_tests-14531644ae672e60.exe)
+
+running 8 tests
+test a_wrong_step_number_is_rejected ... ok
+test a_wrong_invocation_id_is_rejected_before_the_probe_runs ... ok
+test verdict_shaped_evidence_is_rejected ... ok
+test an_unavailable_probe_fails_without_fabricating_a_verdict ... ok
+test a_claimed_identity_that_is_not_the_operator_is_refused ... ok
+test a_fresh_cli_process_reconciles_a_governed_invocation ... ok
+test the_reconciled_state_survives_a_second_restart ... ok
+test repeating_a_reconciliation_is_refused_and_writes_nothing_extra ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.32s
+

@@ -24,3 +24,16 @@ sha2 = "0.10"
 [dev-dependencies]
 rusqlite = { version = "0.36", features = ["bundled"] }
 tempfile = "3.3"
+
+# Platform-native process identity lives strictly in the host crate; the kernel
+# stays platform-agnostic.
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_System_Threading",
+] }
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"

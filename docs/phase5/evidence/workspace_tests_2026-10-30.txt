@@ -1,0 +1,419 @@
+# Phase 5 re-verification — full workspace test suite (2026-10-30)
+#
+# Command: cargo test --workspace   (CARGO_TARGET_DIR=C:\Users\Penjy\skyos_host_target)
+# Scope note: --exclude agents --exclude sky-cli. The full --workspace run was
+# attempted twice (see workspace_build_blocked_2026-10-30.txt) and could not
+# compile: agents/src/executor.rs references ExecutionGuard, cancellation_pending
+# and cancel_and_stop, which do not exist anywhere in the tree. That edit is the
+# in-flight Phase 6.1D cancellation work, not this phase's code.
+# Result: 247 passed, 0 failed, 25 targets, exit 0.
+#
+# Raw output follows.
+
+   Compiling tempfile v3.27.0
+   Compiling skyos-crash-harness v0.1.0 (C:\Users\Penjy\Dev\skyos\crash_harness)
+   Compiling models v0.1.0 (C:\Users\Penjy\Dev\skyos\models)
+   Compiling skyos-provisioner v0.1.0 (C:\Users\Penjy\Dev\skyos\provisioner)
+   Compiling kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+   Compiling tools v0.1.0 (C:\Users\Penjy\Dev\skyos\tools)
+   Compiling skyos-transform v0.1.0 (C:\Users\Penjy\Dev\skyos\transform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 32.14s
+     Running unittests src\lib.rs (C:\Users\Penjy\skyos_host_target\debug\deps\kernel-695d84f5f08e3684.exe)
+
+running 45 tests
+test identity::tests::an_authenticator_can_refuse_agents ... ok
+test identity::tests::deny_all_never_verifies ... ok
+test identity::tests::environment_claimed_identity_is_not_reported_as_verified ... ok
+test identity::tests::verified_identity_carries_the_authenticator_verdict ... ok
+test permissions::policy::tests::drift_detects_version_and_identity_changes ... ok
+test permissions::policy::tests::agents_are_isolated_from_each_other ... ok
+test permissions::policy::tests::empty_capability_set_is_refused ... ok
+test permissions::policy::tests::expired_rule_does_not_authorize ... ok
+test permissions::policy::tests::narrower_scope_is_permitted_and_wider_scope_is_denied ... ok
+test permissions::policy::tests::git_write_rule_covers_git_read_but_not_the_reverse ... ok
+test permissions::policy::tests::revoked_agent_is_denied_even_with_a_matching_rule ... ok
+test permissions::tests::tests::path_traversal_attack_blocked ... ok
+test permissions::tests::tests::expired_or_revoked_grant_denied ... ok
+test permissions::tests::tests::process_exec_arg_prefix_and_workdir_enforced ... ok
+test recovery::evidence::tests::a_checksum_mismatch_never_proves_absence ... ok
+test recovery::evidence::tests::a_probe_that_reports_nothing_is_indeterminate ... ok
+test recovery::evidence::tests::ambiguous_commit_counts_are_indeterminate ... ok
+test recovery::evidence::tests::mismatched_evidence_kind_is_indeterminate ... ok
+test recovery::evidence::tests::one_matching_commit_confirms_success ... ok
+test recovery::evidence::tests::zero_matching_commits_confirms_absence ... ok
+test persistence::db::tests::database_connection_creates_runtime_state_and_enables_sqlite_pragmas ... ok
+test tasks::checkpoint::tests::argument_order_does_not_change_the_fingerprint ... ok
+test tasks::checkpoint::tests::different_commit_messages_produce_different_idempotency_keys ... ok
+test artifacts::registry::tests::registers_and_retrieves_content_addressable_artifacts ... ok
+test artifacts::registry::tests::preserves_the_original_source_and_verifies_stored_bytes ... ok
+test tasks::checkpoint::tests::integral_numbers_are_canonicalized ... ok
+test artifacts::registry::tests::rejects_duplicate_registration_and_records_lineage ... ok
+test events::tests::emit_event_persists_and_reads_event_by_task_id ... ok
+test tasks::checkpoint::tests::null_and_omitted_fields_are_different_proposals ... ok
+test recovery::authorization::tests::authorization_context_round_trips ... ok
+test tasks::checkpoint::tests::string_escaping_normalizes_to_the_parsed_value ... ok
+test tasks::state::tests::invalid_transition_is_rejected ... ok
+test tasks::state::tests::reconstructs_completed_state_from_event_history ... ok
+test tasks::state::tests::task_state_round_trips_through_string ... ok
+test tasks::state::tests::valid_transition_is_allowed ... ok
+test recovery::reconciliation::tests::records_round_trip_in_order ... ok
+test recovery::authorization::tests::denial_decisions_are_append_only ... ok
+test tests::kernel_library_loads ... ok
+test tasks::checkpoint::tests::dispatched_rows_cannot_be_marked_retry_ready_without_evidence ... ok
+test tasks::checkpoint::tests::identical_key_with_different_arguments_is_a_conflict_not_a_replay ... ok
+test tasks::checkpoint::tests::list_unresolved_returns_dispatched_and_pending ... ok
+test tasks::checkpoint::tests::mark_outcome_unknown_is_persisted ... ok
+test tasks::checkpoint::tests::pending_then_dispatched_then_succeeded ... ok
+test tasks::store::tests::creates_and_reads_a_task_from_sqlite ... ok
+test tasks::store::tests::transitions_a_task_state_and_persists_a_transition_event ... ok
+
+test result: ok. 45 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.36s
+
+     Running tests\budget_concurrency_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\budget_concurrency_tests-270f325207c2c5e8.exe)
+
+running 5 tests
+test concurrent_reservations_for_one_invocation_yield_one_row ... ok
+test concurrent_settlements_yield_one_row ... ok
+test settlement_racing_an_exposure_read_is_counted_once ... ok
+test concurrent_child_allocations_cannot_oversubscribe_the_parent ... ok
+test an_unresolved_sibling_holds_budget_against_release ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.80s
+
+     Running tests\budget_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\budget_tests-99766e8a7e092f69.exe)
+
+running 19 tests
+test a_reservation_without_a_declared_envelope_is_refused ... ok
+test a_child_allocation_is_drawn_from_the_parent ... ok
+test a_repeated_reservation_is_idempotent_and_a_conflict_is_refused ... ok
+test a_reservation_beyond_the_envelope_is_refused ... ok
+test a_child_allocation_beyond_the_parent_is_refused_without_partial_writes ... ok
+test a_settlement_supersedes_its_reservation ... ok
+test adjustments_are_signed_and_added_once ... ok
+test a_terminal_resolved_child_releases_its_unused_allocation ... ok
+test crash_after_dispatch_retains_the_reservation ... ok
+test crash_before_reservation_charges_nothing ... ok
+test crash_after_settlement_before_the_checkpoint_does_not_double_count ... ok
+test crash_after_reservation_before_dispatch_releases_it ... ok
+test crash_after_checkpoint_success_is_stable ... ok
+test an_active_child_holds_its_allocation_not_its_usage ... ok
+test an_unresolved_child_keeps_its_allocation_held_even_when_terminal ... ok
+test recovery_bound_is_absent_for_an_invocation_that_never_dispatched ... ok
+test nested_delegation_rolls_up_without_double_counting ... ok
+test repeating_the_same_adjustment_is_idempotent_but_a_conflict_is_refused ... ok
+test recovery_bound_is_capped_by_the_durable_dispatch_timeout ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.75s
+
+     Running tests\delegation_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\delegation_tests-eeb612039e6a986c.exe)
+
+running 10 tests
+test an_edge_is_rejected_when_the_prerequisite_does_not_exist ... ok
+test a_task_cannot_depend_on_itself ... ok
+test child_tasks_are_created_under_their_parent ... ok
+test a_deeper_cycle_is_rejected_too ... ok
+test a_dependency_cycle_is_rejected_without_partial_writes ... ok
+test a_dependent_child_stays_created_until_its_prerequisite_completes ... ok
+test completing_a_prerequisite_releases_exactly_its_dependents ... ok
+test a_dependent_is_not_released_while_another_prerequisite_is_outstanding ... ok
+test readiness_and_completion_are_recorded_in_the_ledger ... ok
+test the_dag_and_readiness_survive_a_restart ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.88s
+
+     Running unittests src\lib.rs (C:\Users\Penjy\skyos_host_target\debug\deps\models-1f63e79b3631f126.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\ollama_provider_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\ollama_provider_tests-9bb1dcba7ef9a9b0.exe)
+
+running 16 tests
+test a_server_error_reports_api_error ... ok
+test a_bare_not_found_is_an_api_error_not_a_missing_model ... ok
+test a_proposal_for_an_unknown_tool_is_rejected_before_dispatch ... ok
+test a_missing_model_reports_model_unavailable ... ok
+test a_non_json_body_reports_malformed_response ... ok
+test a_response_without_an_assistant_message_reports_malformed_response ... ok
+test a_valid_chat_response_is_parsed_into_an_action_proposal ... ok
+test the_adapter_satisfies_the_model_provider_contract ... ok
+test completion_proposals_skip_catalogue_validation ... ok
+test markdown_fenced_model_output_is_unwrapped ... ok
+test an_empty_served_proposal_is_rejected ... ok
+test prose_that_is_not_a_proposal_reports_invalid_proposal ... ok
+test parameters_that_are_not_an_object_are_rejected ... ok
+test the_request_carries_the_model_stream_flag_and_tool_catalogue ... ok
+test a_stalled_model_reports_request_timeout ... ok
+test an_unreachable_endpoint_reports_connection_failed ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.05s
+
+     Running unittests src\main.rs (C:\Users\Penjy\skyos_host_target\debug\deps\sky_crash_worker-2068bc88cea1edfe.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\process_kill.rs (C:\Users\Penjy\skyos_host_target\debug\deps\process_kill-7950d39d07fd3df8.exe)
+
+running 10 tests
+test crash_after_pending_leaves_no_side_effect ... ok
+test offline_policy_tightening_refuses_the_retry_end_to_end ... ok
+test crash_after_result_persistence_is_a_no_op_for_recovery ... ok
+test pending_crash_is_retry_ready_and_retries_exactly_once ... ok
+test crash_after_dispatch_blocks_the_task_without_duplicating ... ok
+test externally_killed_process_leaves_a_durable_unknown_outcome ... ok
+test proven_absent_effect_authorizes_a_single_retry ... ok
+test crash_after_the_side_effect_preserves_the_commit_and_never_replays_it ... ok
+test repeated_recovery_in_fresh_processes_is_idempotent ... ok
+test requeue_is_refused_while_the_outcome_is_unknown ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.42s
+
+     Running unittests src\lib.rs (C:\Users\Penjy\skyos_host_target\debug\deps\skyos_provisioner-59932cd31de891db.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\provisioner_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\provisioner_tests-2181ce0638c55e7a.exe)
+
+running 9 tests
+test test_repository_not_found ... ok
+test test_path_traversal_rejection ... ok
+test test_dirty_repository_block_policy ... ok
+test test_interrupted_provisioning_recovery ... ok
+test test_concurrent_duplicate_requests_create_single_worktree ... ok
+test test_dirty_repository_isolate_policy_leaves_main_tree_untouched ... ok
+test test_clean_repository_provisioning ... ok
+test test_worktree_collision_detected ... ok
+test test_repeated_requests_do_not_duplicate_or_corrupt ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.10s
+
+     Running unittests src\lib.rs (C:\Users\Penjy\skyos_host_target\debug\deps\skyos_transform-fc9a1ec24f024253.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\occ_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\occ_tests-73545c8838adc936.exe)
+
+running 12 tests
+test expectation_naming_a_different_artifact_is_rejected ... ok
+test dry_run_preflight_reports_without_mutating ... ok
+test first_write_on_empty_artifact_is_accepted ... ok
+test checksum_without_expected_revision_is_inconsistent ... ok
+test expected_revision_with_no_head_conflicts ... ok
+test failed_proposal_creates_no_revision_and_does_not_move_head ... ok
+test first_write_when_head_exists_conflicts ... ok
+test matching_revision_and_checksum_commits ... ok
+test concurrent_proposals_from_same_base_have_exactly_one_winner ... ok
+test matching_revision_with_wrong_checksum_conflicts ... ok
+test retry_after_success_conflicts_instead_of_silently_succeeding ... ok
+test stale_revision_conflicts_and_reports_actual_head ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests\revision_store_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\revision_store_tests-51871eb37f14d6cd.exe)
+
+running 9 tests
+test missing_blob_reports_not_found_not_wrong_bytes ... ok
+test first_write_head_is_absent_until_first_append ... ok
+test stored_bytes_reproduce_their_sha256 ... ok
+test identical_content_shares_one_blob_but_keeps_distinct_revisions ... ok
+test appends_chain_parent_revisions_into_a_dag ... ok
+test corrupted_blob_is_detected_on_read ... ok
+test separate_store_instances_share_durable_state ... ok
+test unknown_revision_lookup_fails_cleanly ... ok
+test concurrent_appends_never_corrupt_revision_metadata ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+
+     Running tests\transaction_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\transaction_tests-79202bc76075da15.exe)
+
+running 14 tests
+Junction created for C:\Users\Penjy\AppData\Local\Temp\.tmpgag0lw\workspace\link <<===>> C:\Users\Penjy\AppData\Local\Temp\.tmpgag0lw\outside
+test duplicate_canonical_targets_are_rejected_before_publication ... ok
+test junction_escape_is_rejected_before_publication ... ok
+test first_write_never_silently_overwrites_an_untracked_file ... ok
+test crash_after_commit_before_first_file_is_recovered_on_restart ... ok
+test commit_publishes_manifest_revisions_heads_and_journal_together ... ok
+test lost_journal_completion_write_is_safe_to_retry ... ok
+test concurrent_overlapping_batches_have_exactly_one_winner ... ok
+test replaying_the_same_proposal_returns_the_existing_manifest ... ok
+test crash_halfway_through_materialization_completes_without_duplicates ... ok
+test reusing_a_transaction_id_with_different_content_conflicts ... ok
+test materialize_writes_all_files_marks_batch_materialized_and_is_idempotent ... ok
+test unsafe_paths_are_rejected_before_publication ... ok
+test target_changed_externally_is_detected_and_not_overwritten ... ok
+test stale_expectation_rolls_back_the_entire_batch ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.66s
+
+     Running unittests src\lib.rs (C:\Users\Penjy\skyos_host_target\debug\deps\tools-3cb11f3f25ffebeb.exe)
+
+running 4 tests
+test reconciler::tests::checksum_probe_reports_a_match_without_claiming_absence ... ok
+test reconciler::tests::unreadable_repository_is_an_error_not_a_verdict ... ok
+test reconciler::tests::reports_zero_matches_when_nothing_landed ... ok
+test reconciler::tests::reports_the_matching_commit_when_it_exists ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+     Running tests\domain_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\domain_tests-4de6ba9585e58caa.exe)
+
+running 21 tests
+test domain_registration_creates_all_tables_idempotently ... ok
+test dispatcher_without_domain_store_fails_gracefully ... ok
+test cte_write_attack_in_query_blocked_by_authorizer ... ok
+test cross_namespace_join_attack_blocked_by_authorizer ... ok
+test cross_namespace_read_attack_blocked_by_authorizer ... ok
+test audit_events_persisted_for_domain_operations ... ok
+test cross_namespace_mutate_attack_blocked_by_authorizer ... ok
+test academy_socratic_session_flow ... ok
+test namespace_validation_rejects_malformed_string ... ok
+test mutate_rejects_select_sql ... ok
+test policy_different_namespace_grant_denied ... ok
+test policy_expired_and_revoked_grant_denied ... ok
+test fitness_mutate_and_query_flow ... ok
+test finance_multi_rail_ledger_flow ... ok
+test pantry_mutate_and_query_flow ... ok
+test pragma_execution_blocked_by_authorizer ... ok
+test policy_read_only_grant_rejects_mutate ... ok
+test query_rejects_non_select_sql ... ok
+test productivity_items_and_vault_flow ... ok
+test system_table_inspection_blocked_by_authorizer ... ok
+test transaction_rollback_on_constraint_violation ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.26s
+
+     Running tests\git_container_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\git_container_tests-c6e861985ed720b2.exe)
+
+running 16 tests
+test git_read_only_grant_rejects_branch_create ... ok
+test container_revoked_grant_is_denied ... ok
+test container_expired_grant_is_denied ... ok
+test git_denied_operation_emits_permission_denied_event ... ok
+test git_read_only_grant_rejects_commit ... ok
+test container_rejects_image_not_on_allowlist ... ok
+test container_denial_emits_audit_event ... ok
+test git_rejects_absolute_path_in_stage ... ok
+test git_read_only_grant_rejects_stage ... ok
+test git_rejects_empty_commit_message ... ok
+test git_surfaces_policy_and_failure_audit_persistence_errors ... ok
+test git_write_grant_rejects_operation_outside_repo_root ... ok
+test git_rejects_traversal_in_stage_paths ... ok
+test git_rejects_unsafe_branch_name_with_shell_chars ... ok
+test successful_git_commit_with_failed_completion_audit_is_outcome_unknown ... ok
+test container_wildcard_allowlist_permits_any_image ... ok
+
+test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.02s
+
+     Running tests\hardware_network_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\hardware_network_tests-8140eaac9fa76d69.exe)
+
+running 29 tests
+test bind_addr_accepts_loopback ... ok
+test bind_addr_accepts_private_subnets ... ok
+test device_node_accepts_camera_and_serial ... ok
+test bind_addr_rejects_public_ip ... ok
+test bind_addr_rejects_invalid_string ... ok
+test device_node_rejects_block_device ... ok
+test device_node_rejects_empty_string ... ok
+test device_node_rejects_null_byte ... ok
+test device_node_rejects_traversal_sequence ... ok
+test hardware_and_network_schemas_contain_no_grant_fields ... ok
+test dispatcher_rejects_unknown_network_operation ... ok
+test dispatcher_rejects_unknown_hardware_operation ... ok
+test hardware_capture_frame_denied_without_grant ... ok
+test hardware_capture_frame_denied_for_blocked_device ... ok
+test hardware_serial_write_denied_with_read_only_grant ... ok
+test dispatcher_routes_hardware_capture_frame ... ok
+test dispatcher_routes_network_bind_socket ... ok
+test hardware_capture_frame_succeeds_with_valid_grant ... ok
+test hardware_serial_write_rejects_invalid_baud_rate ... ok
+test port_accepts_ephemeral_range ... ok
+test port_rejects_privileged_ports ... ok
+test schema_export_covers_hardware_and_network ... ok
+test network_bind_socket_rejects_privileged_port ... ok
+test network_bind_socket_rejects_public_address ... ok
+test hardware_serial_write_succeeds_with_write_grant ... ok
+test network_send_datagram_rejects_oversized_payload ... ok
+test network_bind_socket_denied_without_matching_grant ... ok
+test network_bind_socket_succeeds_with_valid_grant ... ok
+test network_send_datagram_succeeds_with_valid_grant ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.43s
+
+     Running tests\registry_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\registry_tests-c3145d44e1b45768.exe)
+
+running 19 tests
+test dispatcher_rejects_missing_relative_path_for_read ... ok
+test dispatcher_rejects_non_string_args_array_for_process ... ok
+test dispatcher_rejects_missing_message_for_git_commit ... ok
+test dispatcher_rejects_missing_content_for_write ... ok
+test dispatcher_emits_tool_invocation_attempted_event ... ok
+test dispatcher_rejects_expired_grant_for_filesystem_read ... ok
+test dispatcher_records_idempotency_key_in_attempted_event ... ok
+test dispatcher_rejects_grant_scoped_to_different_workspace ... ok
+test schema_export_contains_no_grant_or_secret_fields ... ok
+test schema_export_covers_all_four_tool_families ... ok
+test schema_export_is_valid_json ... ok
+test schema_export_required_fields_are_present ... ok
+test dispatcher_rejects_unknown_filesystem_operation ... ok
+test dispatcher_rejects_unknown_container_operation ... ok
+test dispatcher_rejects_revoked_grant_for_filesystem_write ... ok
+test dispatcher_rejects_unknown_git_operation ... ok
+test dispatcher_rejects_unknown_process_operation ... ok
+test dispatcher_rejects_unknown_tool_id ... ok
+test dispatcher_routes_filesystem_write_and_emits_audit_event ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+
+     Running tests\tool_runtime_tests.rs (C:\Users\Penjy\skyos_host_target\debug\deps\tool_runtime_tests-914782a9f203d34f.exe)
+
+running 9 tests
+test process_child_emits_large_output ... ok
+test process_child_sleeps ... ok
+test filesystem_rejects_traversal_and_symlink_escape ... ok
+test process_executor_denies_unauthorized_executable_and_persists_audit ... ok
+test failed_filesystem_rename_cleans_up_staged_file ... ok
+test filesystem_rejects_oversized_reads_before_reading_contents ... ok
+test process_executor_bounds_stdout_and_stderr ... ok
+test filesystem_write_is_atomic_registers_cas_and_is_audited ... ok
+test process_executor_kills_and_reaps_timed_out_child ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.39s
+
+   Doc-tests kernel
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests models
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests skyos_provisioner
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests skyos_transform
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests tools
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+REST_EXIT=0

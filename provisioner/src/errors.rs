@@ -2,7 +2,9 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum ProvisionError {
-    #[error("Path traversal violation: Target '{target}' is outside sandbox root '{sandbox_root}'")]
+    #[error(
+        "Path traversal violation: Target '{target}' is outside sandbox root '{sandbox_root}'"
+    )]
     PathTraversalViolation {
         target: std::path::PathBuf,
         sandbox_root: std::path::PathBuf,
@@ -39,9 +41,7 @@ pub enum ProvisionError {
     #[error("Provisioning lock exists for task '{task_id}': Incomplete operation detected; run recovery first")]
     IncompleteProvisioningLock { task_id: String },
 
-    #[error(
-        "Dirty-tree policy '{policy}' is not implemented; refusing to proceed as if it were"
-    )]
+    #[error("Dirty-tree policy '{policy}' is not implemented; refusing to proceed as if it were")]
     UnimplementedPolicy { policy: String },
 
     #[error("Task '{0}' is not registered in the runtime ledger")]

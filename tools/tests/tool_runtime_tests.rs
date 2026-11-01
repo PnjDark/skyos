@@ -105,7 +105,9 @@ fn filesystem_rejects_traversal_and_symlink_escape() {
     let grant = filesystem_grant(&issuer, task_id, &workspace, true, true);
     let context = ToolContext::new(task_id, "test_agent");
     let filesystem = FilesystemToolRegistry::new(&event_bus, &mut registry, &issuer);
-    #[cfg(windows)]
+    // Both the `#[cfg(unix)]` and `#[cfg(windows)]` blocks below call
+    // `write_file(&mut self)`, so the binding must be mutable on every
+    // platform — gating this shadow on one OS breaks compilation on the other.
     let mut filesystem = filesystem;
 
     let traversal = filesystem.read_file(
@@ -170,8 +172,12 @@ fn filesystem_rejects_traversal_and_symlink_escape() {
                 if matches!(
                     error.kind(),
                     std::io::ErrorKind::PermissionDenied | std::io::ErrorKind::Unsupported
-                ) =>
+                ) || error.raw_os_error() == Some(1314) =>
             {
+                // ERROR_PRIVILEGE_NOT_HELD: creating a symlink on Windows needs
+                // Developer Mode or SeCreateSymbolicLinkPrivilege.  The escape
+                // check itself is still exercised by the lexical traversal cases
+                // above; only the symlink variant cannot run unprivileged.
                 eprintln!("Skipping Windows symlink assertion: {error}");
             }
             Err(error) => panic!("failed to create symlink for security test: {error}"),

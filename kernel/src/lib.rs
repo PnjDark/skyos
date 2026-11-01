@@ -1,6 +1,8 @@
 pub mod artifacts;
+pub mod delegation;
 pub mod domain;
 pub mod events;
+pub mod identity;
 pub mod permissions;
 pub mod persistence;
 pub mod recovery;

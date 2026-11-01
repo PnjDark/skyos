@@ -83,9 +83,10 @@ impl<'a> GovernedProvisioner<'a> {
         let task_str = request.task_id.to_string();
 
         // ── WP1a: the task must exist in the durable ledger ──────────────────
-        let task = self.task_store.get_task(&request.task_id).map_err(|e| {
-            ProvisionError::GitError(format!("task ledger lookup failed: {e}"))
-        })?;
+        let task = self
+            .task_store
+            .get_task(&request.task_id)
+            .map_err(|e| ProvisionError::GitError(format!("task ledger lookup failed: {e}")))?;
         if task.is_none() {
             let reason = format!("Task {task_str} is not registered in the runtime ledger");
             self.emit(
@@ -344,7 +345,10 @@ impl GitAdapter for GitCliAdapter {
             .ok_or_else(|| ProvisionError::GitError("worktree path is not UTF-8".into()))?;
         match base_commit {
             Some(base) => {
-                Self::git(repo_path, &["worktree", "add", "-b", branch, path_str, base])?;
+                Self::git(
+                    repo_path,
+                    &["worktree", "add", "-b", branch, path_str, base],
+                )?;
             }
             None => {
                 Self::git(repo_path, &["worktree", "add", "-b", branch, path_str])?;
@@ -353,7 +357,11 @@ impl GitAdapter for GitCliAdapter {
         Ok(())
     }
 
-    fn remove_worktree(&self, repo_path: &Path, worktree_path: &Path) -> Result<(), ProvisionError> {
+    fn remove_worktree(
+        &self,
+        repo_path: &Path,
+        worktree_path: &Path,
+    ) -> Result<(), ProvisionError> {
         if !worktree_path.exists() {
             return Ok(());
         }
@@ -367,7 +375,11 @@ impl GitAdapter for GitCliAdapter {
         Ok(())
     }
 
-    fn repair_worktree(&self, repo_path: &Path, worktree_path: &Path) -> Result<(), ProvisionError> {
+    fn repair_worktree(
+        &self,
+        repo_path: &Path,
+        worktree_path: &Path,
+    ) -> Result<(), ProvisionError> {
         let path_str = worktree_path.to_string_lossy();
         Self::git(repo_path, &["worktree", "repair", &path_str])?;
         Ok(())

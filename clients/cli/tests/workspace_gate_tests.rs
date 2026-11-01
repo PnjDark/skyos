@@ -289,7 +289,10 @@ async fn execution_failure_emits_failed_with_execution_stage() {
         .iter()
         .find(|e| e.event_type == EVENT_WORKSPACE_PROVISIONING_FAILED)
         .expect("failed event missing");
-    assert_eq!(failed.payload.get("stage").and_then(|v| v.as_str()), Some("execution"));
+    assert_eq!(
+        failed.payload.get("stage").and_then(|v| v.as_str()),
+        Some("execution")
+    );
     // Started WAS emitted (authorization passed), then failed.
     let types = h.event_types(task_id);
     assert!(types.contains(&EVENT_WORKSPACE_PROVISIONING_STARTED.to_string()));
@@ -318,7 +321,9 @@ async fn repeated_identical_request_returns_same_workspace() {
     assert_eq!(first.canonical_root, second.canonical_root);
     assert_eq!(first.created_at, second.created_at);
     // Exactly one worktree directory exists.
-    let count = std::fs::read_dir(repo.join(".sky/worktrees")).unwrap().count();
+    let count = std::fs::read_dir(repo.join(".sky/worktrees"))
+        .unwrap()
+        .count();
     assert_eq!(count, 1);
 }
 
@@ -363,7 +368,10 @@ async fn interrupted_provisioning_blocks_then_recovers() {
         .provision(&h.sandbox, &request(task_id, "proj"), &grant)
         .await
         .unwrap_err();
-    assert!(matches!(err, ProvisionError::IncompleteProvisioningLock { .. }));
+    assert!(matches!(
+        err,
+        ProvisionError::IncompleteProvisioningLock { .. }
+    ));
 
     // Recovery cleans the incomplete state.
     let recovered = h.provisioner().recover(&h.sandbox, "proj").await.unwrap();
@@ -427,7 +435,9 @@ async fn ledger_failure_before_mutation_prevents_any_disk_change() {
     assert!(err.is_err(), "unauditable operation must not succeed");
     // Fail closed: no workspace, no lock, no staged tmp dir on disk.
     assert!(!repo.join(".sky/worktrees").exists());
-    assert!(!repo.join(".sky/provision_".to_string() + &task_id.to_string() + ".lock").exists());
+    assert!(!repo
+        .join(".sky/provision_".to_string() + &task_id.to_string() + ".lock")
+        .exists());
     assert!(!repo.join(".sky/tmp").exists());
 }
 
@@ -453,7 +463,10 @@ async fn final_ledger_failure_rolls_back_completed_workspace() {
         .provisioner()
         .provision(&h.sandbox, &request(task_id, "proj"), &grant)
         .await;
-    assert!(err.is_err(), "failed final audit write must fail the operation");
+    assert!(
+        err.is_err(),
+        "failed final audit write must fail the operation"
+    );
 
     // Rollback: no partially published (unaudited) workspace may remain.
     let worktrees = repo.join(".sky/worktrees");
@@ -467,7 +480,10 @@ async fn final_ledger_failure_rolls_back_completed_workspace() {
     let context_file = repo
         .join(".sky/workspaces")
         .join(format!("{}.json", task_id));
-    assert!(!context_file.exists(), "context file must be rolled back too");
+    assert!(
+        !context_file.exists(),
+        "context file must be rolled back too"
+    );
     // And crucially, the ledger holds no WorkspaceProvisioned success event.
     let types = h.event_types(task_id);
     assert!(!types.contains(&EVENT_WORKSPACE_PROVISIONED.to_string()));

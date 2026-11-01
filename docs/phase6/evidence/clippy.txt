@@ -1,0 +1,8 @@
+    Checking models v0.1.0 (C:\Users\Penjy\Dev\skyos\models)
+    Checking tools v0.1.0 (C:\Users\Penjy\Dev\skyos\tools)
+    Checking skyos-transform v0.1.0 (C:\Users\Penjy\Dev\skyos\transform)
+    Checking sky-cli v0.1.0 (C:\Users\Penjy\Dev\skyos\clients\cli)
+    Checking skyos-crash-harness v0.1.0 (C:\Users\Penjy\Dev\skyos\crash_harness)
+    Checking agents v0.1.0 (C:\Users\Penjy\Dev\skyos\agents)
+    Checking kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 4.76s

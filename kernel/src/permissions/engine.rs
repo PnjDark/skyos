@@ -1,13 +1,16 @@
 use crate::events::EventBus;
 use crate::events::EventError;
-use crate::permissions::policy::PolicyValidator;
+use crate::permissions::policy::{AuthorizationOutcome, AuthorizationPolicy, PolicyValidator};
 use crate::permissions::types::{
     Capability, CapabilityGrant, PolicyDecision, ToolInvocationRequest,
 };
 use serde_json::json;
+use uuid::Uuid;
 
 pub const EVENT_PERMISSION_GRANTED: &str = "PermissionGranted";
 pub const EVENT_PERMISSION_DENIED: &str = "PermissionDenied";
+pub const EVENT_CAPABILITIES_AUTHORIZED: &str = "CapabilitiesAuthorized";
+pub const EVENT_CAPABILITIES_DENIED: &str = "CapabilitiesDenied";
 
 pub struct PolicyEngine<'a> {
     event_bus: Option<&'a EventBus>,
@@ -142,6 +145,12 @@ impl<'a> PolicyEngine<'a> {
                         read_only: cap_ro,
                     },
                 ) => req_ns == cap_ns && (*req_ro || !cap_ro),
+                (
+                    ToolInvocationRequest::SystemReconciliation {
+                        task_id: req_task, ..
+                    },
+                    Capability::SystemReconciliation { task_id: cap_task },
+                ) => req_task == cap_task,
                 _ => false,
             };
             if matches {
@@ -167,6 +176,59 @@ impl<'a> PolicyEngine<'a> {
         // 3. Emit durable audit event
         self.audit_log(grant, request, &decision)?;
         Ok(decision)
+    }
+
+    /// Re-evaluate a whole capability set against the *current* policy.
+    ///
+    /// This is the Phase 5.2 entry point: a recovery decision is only valid if
+    /// the policy in force **now** actually permits the capability intent that
+    /// was recorded before the crash.  The decision is audited durably; if the
+    /// audit cannot be written the call fails and the caller must fail closed.
+    pub fn authorize_capability_set(
+        &self,
+        policy: &AuthorizationPolicy,
+        agent_id: &str,
+        task_id: Uuid,
+        capabilities: &[Capability],
+    ) -> Result<AuthorizationOutcome, EventError> {
+        let outcome = policy.authorize(agent_id, capabilities);
+
+        if let Some(bus) = self.event_bus {
+            let event_type = if outcome.is_granted() {
+                EVENT_CAPABILITIES_AUTHORIZED
+            } else {
+                EVENT_CAPABILITIES_DENIED
+            };
+            let payload = match &outcome {
+                AuthorizationOutcome::Granted {
+                    capabilities,
+                    policy_id,
+                    policy_version,
+                } => json!({
+                    "agent_id": agent_id,
+                    "task_id": task_id,
+                    "decision": "granted",
+                    "policy_id": policy_id,
+                    "policy_version": policy_version,
+                    "capabilities": capabilities,
+                }),
+                AuthorizationOutcome::Denied {
+                    reason,
+                    denied_capability,
+                } => json!({
+                    "agent_id": agent_id,
+                    "task_id": task_id,
+                    "decision": "denied",
+                    "policy_id": policy.policy_id(),
+                    "policy_version": policy.version(),
+                    "reason": reason,
+                    "denied_capability": denied_capability,
+                }),
+            };
+            bus.emit_event(Some(&task_id.to_string()), event_type, payload)?;
+        }
+
+        Ok(outcome)
     }
 
     fn audit_log(

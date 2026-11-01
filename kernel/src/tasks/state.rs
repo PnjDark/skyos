@@ -10,9 +10,16 @@ pub enum TaskState {
     Running,
     Waiting,
     Blocked,
+    /// Cancellation requested; no new work may start, budget stays held.
+    /// Reached from any active state, and only leaves via `Cancelled` or
+    /// `Escalated`.
+    Cancelling,
     Escalated,
     Failed,
     Completed,
+    /// Terminal cancellation. Reached only through `Cancelling`, once every
+    /// descendant is terminal and every live execution acknowledged.
+    Cancelled,
 }
 
 impl fmt::Display for TaskState {
@@ -30,10 +37,17 @@ impl TaskState {
             Self::Running => "Running",
             Self::Waiting => "Waiting",
             Self::Blocked => "Blocked",
+            Self::Cancelling => "Cancelling",
             Self::Escalated => "Escalated",
             Self::Failed => "Failed",
             Self::Completed => "Completed",
+            Self::Cancelled => "Cancelled",
         }
+    }
+
+    /// True when the task can no longer change state.
+    pub fn is_terminal(self) -> bool {
+        matches!(self, Self::Completed | Self::Failed | Self::Cancelled)
     }
 
     pub fn can_transition_to(self, next: Self) -> bool {
@@ -55,6 +69,21 @@ impl TaskState {
                 | (Self::Escalated, Self::Ready)
                 | (Self::Escalated, Self::Failed)
                 | (Self::Failed, Self::Ready)
+                // Phase 6.1D — cancellation.
+                // Any active state may enter `Cancelling`; a terminal state may
+                // never be overwritten by a cancellation request.
+                | (Self::Created, Self::Cancelling)
+                | (Self::Ready, Self::Cancelling)
+                | (Self::Claimed, Self::Cancelling)
+                | (Self::Running, Self::Cancelling)
+                | (Self::Waiting, Self::Cancelling)
+                | (Self::Blocked, Self::Cancelling)
+                | (Self::Escalated, Self::Cancelling)
+                // Terminal cancellation is reachable only through `Cancelling`,
+                // and only once the cascade is confirmed. There is deliberately
+                // no edge from any other state, and none into `Completed`.
+                | (Self::Cancelling, Self::Cancelled)
+                | (Self::Cancelling, Self::Escalated)
         )
     }
 
@@ -78,9 +107,11 @@ impl TryFrom<&str> for TaskState {
             "Running" => Ok(Self::Running),
             "Waiting" => Ok(Self::Waiting),
             "Blocked" => Ok(Self::Blocked),
+            "Cancelling" => Ok(Self::Cancelling),
             "Escalated" => Ok(Self::Escalated),
             "Failed" => Ok(Self::Failed),
             "Completed" => Ok(Self::Completed),
+            "Cancelled" => Ok(Self::Cancelled),
             _ => Err(TaskStateError::UnknownState(value.to_string())),
         }
     }

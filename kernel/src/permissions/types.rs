@@ -40,6 +40,12 @@ pub enum Capability {
     /// Access to a registered domain namespace.
     /// `read_only` prevents mutate() calls.
     DomainAccess { namespace: String, read_only: bool },
+    /// Authority to reconcile an uncertain invocation for exactly one task.
+    ///
+    /// Task-scoped rather than ledger-scoped: an operator reconciling a crashed
+    /// task must not thereby be able to reconcile every other task in the same
+    /// runtime. It is never granted to an agent.
+    SystemReconciliation { task_id: Uuid },
 }
 
 /// Opaque, kernel‑minted handle representing an authorized execution context.
@@ -115,6 +121,11 @@ pub enum ToolInvocationRequest {
         namespace: String,
         read_only: bool,
     },
+    /// Request to reconcile an uncertain invocation for one task.
+    SystemReconciliation {
+        task_id: Uuid,
+        action: String,
+    },
 }
 
 impl ToolInvocationRequest {
@@ -131,6 +142,7 @@ impl ToolInvocationRequest {
             Self::HardwareAccess { .. } => "hardware.access",
             Self::NetworkBind { .. } => "network.bind",
             Self::DomainAccess { .. } => "domain.access",
+            Self::SystemReconciliation { .. } => "system.reconcile",
         }
     }
 }
@@ -150,5 +162,89 @@ pub enum PolicyDecision {
 impl PolicyDecision {
     pub fn is_allowed(&self) -> bool {
         matches!(self, Self::Allow { .. })
+    }
+}
+
+/// The *family* of a capability, stripped of its resource scope.
+///
+/// Recovery needs this to answer a question the agent must not answer for
+/// itself: "what kind of authority does the pending operation actually
+/// require?"  The family comes from the tool manifest; the scope comes from the
+/// persisted capability intent.  Narrowing the intent to the required family
+/// is how the runtime prevents an under-declared retry.
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Hash)]
+pub enum CapabilityKind {
+    FileSystemRead,
+    FileSystemWrite,
+    ProcessExec,
+    NetworkOutbound,
+    ContainerExec,
+    GitRead,
+    GitWrite,
+    ContainerRun,
+    HardwareAccess,
+    NetworkBind,
+    DomainAccess,
+    SystemReconciliation,
+}
+
+impl CapabilityKind {
+    pub fn of(capability: &Capability) -> Self {
+        match capability {
+            Capability::FileSystemRead { .. } => Self::FileSystemRead,
+            Capability::FileSystemWrite { .. } => Self::FileSystemWrite,
+            Capability::ProcessExec { .. } => Self::ProcessExec,
+            Capability::NetworkOutbound { .. } => Self::NetworkOutbound,
+            Capability::ContainersExec { .. } => Self::ContainerExec,
+            Capability::GitRead { .. } => Self::GitRead,
+            Capability::GitWrite { .. } => Self::GitWrite,
+            Capability::ContainerRun { .. } => Self::ContainerRun,
+            Capability::HardwareAccess { .. } => Self::HardwareAccess,
+            Capability::NetworkBind { .. } => Self::NetworkBind,
+            Capability::DomainAccess { .. } => Self::DomainAccess,
+            Capability::SystemReconciliation { .. } => Self::SystemReconciliation,
+        }
+    }
+
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::FileSystemRead => "FileSystemRead",
+            Self::FileSystemWrite => "FileSystemWrite",
+            Self::ProcessExec => "ProcessExec",
+            Self::NetworkOutbound => "NetworkOutbound",
+            Self::ContainerExec => "ContainersExec",
+            Self::GitRead => "GitRead",
+            Self::GitWrite => "GitWrite",
+            Self::ContainerRun => "ContainerRun",
+            Self::HardwareAccess => "HardwareAccess",
+            Self::NetworkBind => "NetworkBind",
+            Self::DomainAccess => "DomainAccess",
+            Self::SystemReconciliation => "SystemReconciliation",
+        }
+    }
+
+    /// Parse the capability name used by tool schemas.
+    pub fn from_name(name: &str) -> Option<Self> {
+        Some(match name {
+            "FileSystemRead" => Self::FileSystemRead,
+            "FileSystemWrite" => Self::FileSystemWrite,
+            "ProcessExec" => Self::ProcessExec,
+            "NetworkOutbound" => Self::NetworkOutbound,
+            "ContainersExec" | "ContainerExec" => Self::ContainerExec,
+            "GitRead" => Self::GitRead,
+            "GitWrite" => Self::GitWrite,
+            "ContainerRun" => Self::ContainerRun,
+            "HardwareAccess" => Self::HardwareAccess,
+            "NetworkBind" => Self::NetworkBind,
+            "DomainAccess" => Self::DomainAccess,
+            "SystemReconciliation" => Self::SystemReconciliation,
+            _ => return None,
+        })
+    }
+}
+
+impl std::fmt::Display for CapabilityKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
     }
 }

@@ -83,7 +83,12 @@ impl ArtifactRegistry {
         store_root: impl AsRef<Path>,
     ) -> Result<Self, ArtifactError> {
         let connection = rusqlite::Connection::open(path)?;
-        connection.execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;")?;
+        // busy_timeout: WAL allows only one writer at a time; without a
+        // timeout, concurrent writers fail immediately with SQLITE_BUSY
+        // instead of briefly queueing.
+        connection.execute_batch(
+            "PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;",
+        )?;
         connection.execute_batch(crate::persistence::migrations::M3_ARTIFACTS_SCHEMA)?;
 
         let store_root = store_root.as_ref().to_path_buf();
@@ -119,7 +124,12 @@ impl ArtifactRegistry {
         let metadata_map = serde_json::from_value::<HashMap<String, serde_json::Value>>(metadata)?;
         let created_at = chrono::Utc::now().to_rfc3339();
 
-        let transaction = self.connection.transaction()?;
+        // IMMEDIATE: acquire the write lock up front. A deferred transaction
+        // that reads first and then writes can fail with an immediate
+        // SQLITE_BUSY (snapshot upgrade) that busy_timeout cannot retry.
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let existing: Option<Artifact> = transaction
             .query_row(
                 "SELECT artifact_id, task_id, artifact_type, hash, size_bytes, location_uri, metadata FROM artifacts WHERE hash = ?1",
@@ -231,16 +241,19 @@ impl ArtifactRegistry {
             self.store_root.display(),
             stored_path.display(),
             location_uri
-        );
-
-        let transaction = self.connection.transaction()?;
+        ); // See register_text_artifact: IMMEDIATE avoids non-retryable
+        // SQLITE_BUSY on read→write upgrade under concurrent registration.
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         let existing: Option<Artifact> = transaction
             .query_row(
                 "SELECT artifact_id, task_id, artifact_type, hash, size_bytes, location_uri, metadata FROM artifacts WHERE hash = ?1",
                 [&hash],
                 |row| {
                     let artifact_type: String = row.get("artifact_type")?;
-                    let artifact_type = ArtifactType::try_from(artifact_type.as_str()).map_err(|error| {
+                    let artifact_type =
+                        ArtifactType::try_from(artifact_type.as_str()).map_err(|error| {
                         rusqlite::Error::FromSqlConversionFailure(
                             0,
                             rusqlite::types::Type::Text,

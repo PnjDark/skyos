@@ -45,11 +45,7 @@ impl GitAdapter for MockGitAdapter {
         Ok(())
     }
 
-    fn remove_worktree(
-        &self,
-        _repo: &Path,
-        worktree_path: &Path,
-    ) -> Result<(), ProvisionError> {
+    fn remove_worktree(&self, _repo: &Path, worktree_path: &Path) -> Result<(), ProvisionError> {
         if worktree_path.exists() {
             std::fs::remove_dir_all(worktree_path).map_err(ProvisionError::Io)?;
         }
@@ -164,7 +160,10 @@ async fn test_path_traversal_rejection() {
         .provision_workspace("task-103", "../outside-project", "feat/hack", None)
         .await;
 
-    assert!(matches!(res, Err(ProvisionError::PathTraversalViolation { .. })));
+    assert!(matches!(
+        res,
+        Err(ProvisionError::PathTraversalViolation { .. })
+    ));
 }
 
 #[cfg(unix)]
@@ -195,6 +194,94 @@ async fn test_symlink_escape_rejected() {
         Err(ProvisionError::SymlinkEscape { .. })
             | Err(ProvisionError::PathTraversalViolation { .. })
     ));
+    // Rejected paths cause zero filesystem mutations: no .sky at all.
+    assert!(!sandbox.join("linked-project/.sky").exists());
+    assert!(!outside.path().join("evil/.sky").exists());
+}
+
+/// An intermediate directory component that is a symlink escaping the sandbox
+/// must be rejected — not just the final path component.
+#[cfg(unix)]
+#[tokio::test]
+async fn test_intermediate_directory_symlink_escape_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let sandbox = temp.path();
+    let outside = TempDir::new().unwrap();
+    std::fs::create_dir_all(outside.path().join("real-project/.git")).unwrap();
+    std::fs::create_dir_all(sandbox.join("inner")).unwrap();
+    // sandbox/inner/linkdir -> outside/real-project : only the *middle*
+    // component of sandbox/inner/linkdir/sub escapes.
+    symlink(
+        outside.path().join("real-project"),
+        sandbox.join("inner/linkdir"),
+    )
+    .unwrap();
+
+    let provisioner = RepositoryProvisioner::new(
+        sandbox,
+        adapter(false),
+        DirtyTreePolicy::IsolateMainTreeUntouched,
+    )
+    .unwrap();
+
+    let res = provisioner
+        .provision_workspace("task-int", "inner/linkdir", "feat/int", None)
+        .await;
+
+    assert!(
+        matches!(
+            res,
+            Err(ProvisionError::SymlinkEscape { .. })
+                | Err(ProvisionError::PathTraversalViolation { .. })
+        ),
+        "intermediate symlink escape must be rejected, got: {res:?}"
+    );
+    assert!(!outside.path().join("real-project/.sky").exists());
+    assert!(!sandbox.join("inner/linkdir/.sky").exists());
+}
+
+/// A dangling symlink whose target lies outside the sandbox must be rejected
+/// during validation — even though the target does not exist yet.
+#[cfg(unix)]
+#[tokio::test]
+async fn test_dangling_symlink_escape_rejected() {
+    use std::os::unix::fs::symlink;
+
+    let temp = TempDir::new().unwrap();
+    let sandbox = temp.path();
+    let outside = TempDir::new().unwrap();
+    // Dangling link: target outside the sandbox does not exist.
+    symlink(
+        outside.path().join("not-yet-created"),
+        sandbox.join("dangling-project"),
+    )
+    .unwrap();
+
+    let provisioner = RepositoryProvisioner::new(
+        sandbox,
+        adapter(false),
+        DirtyTreePolicy::IsolateMainTreeUntouched,
+    )
+    .unwrap();
+
+    let res = provisioner
+        .provision_workspace("task-dangling", "dangling-project", "feat/d", None)
+        .await;
+
+    assert!(
+        matches!(
+            res,
+            Err(ProvisionError::SymlinkEscape { .. })
+                | Err(ProvisionError::RepositoryNotFound(_))
+                | Err(ProvisionError::PathTraversalViolation { .. })
+        ),
+        "dangling escaping symlink must be rejected, got: {res:?}"
+    );
+    // Nothing was created anywhere: no mutation, no target materialization.
+    assert!(!outside.path().join("not-yet-created").exists());
+    assert!(!sandbox.join("dangling-project/.sky").exists());
 }
 
 #[tokio::test]
@@ -231,7 +318,11 @@ async fn test_interrupted_provisioning_recovery() {
     let tmp_dir = sky_dir.join("tmp").join("prov_task-999");
     std::fs::create_dir_all(repo_dir.join(".git")).unwrap();
     std::fs::create_dir_all(&tmp_dir).unwrap();
-    std::fs::write(sky_dir.join("provision_task-999.lock"), "2026-10-23T07:00:00Z").unwrap();
+    std::fs::write(
+        sky_dir.join("provision_task-999.lock"),
+        "2026-10-23T07:00:00Z",
+    )
+    .unwrap();
 
     let provisioner = RepositoryProvisioner::new(
         sandbox,
@@ -304,18 +395,26 @@ async fn test_concurrent_duplicate_requests_create_single_worktree() {
     // Two callers race the identical request concurrently.
     let p1 = {
         let p = Arc::clone(&provisioner);
-        async move { p.provision_workspace("task-race", "race-project", "feat/race", None).await }
+        async move {
+            p.provision_workspace("task-race", "race-project", "feat/race", None)
+                .await
+        }
     };
     let p2 = {
         let p = Arc::clone(&provisioner);
-        async move { p.provision_workspace("task-race", "race-project", "feat/race", None).await }
+        async move {
+            p.provision_workspace("task-race", "race-project", "feat/race", None)
+                .await
+        }
     };
     let (r1, r2) = tokio::join!(p1, p2);
 
     // Exactly one worktree must exist regardless of who won the lock race.
     let worktree_dir = repo_dir.join(".sky/worktrees/task-race");
     assert!(worktree_dir.exists());
-    let count = std::fs::read_dir(repo_dir.join(".sky/worktrees")).unwrap().count();
+    let count = std::fs::read_dir(repo_dir.join(".sky/worktrees"))
+        .unwrap()
+        .count();
     assert_eq!(count, 1, "duplicate worktrees created under concurrency");
     // Lock must be released by the winner; no staged tmp dir left behind.
     assert!(!repo_dir.join(".sky/provision_task-race.lock").exists());
@@ -336,9 +435,7 @@ async fn test_concurrent_duplicate_requests_create_single_worktree() {
                 "loser must be rejected by the lock, got: {e}"
             );
         }
-        (Err(e1), Err(e2)) => panic!(
-            "both concurrent callers failed: {e1} / {e2}"
-        ),
+        (Err(e1), Err(e2)) => panic!("both concurrent callers failed: {e1} / {e2}"),
     }
 }
 

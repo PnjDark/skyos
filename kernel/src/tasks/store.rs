@@ -59,6 +59,10 @@ impl TaskStore {
         })
     }
 
+    pub fn database_path(&self) -> &Path {
+        self.connection.path()
+    }
+
     pub fn create_task(
         &self,
         title: &str,
@@ -124,8 +128,23 @@ impl TaskStore {
     ) -> Result<Uuid, TaskStoreError> {
         let mut connection = self.connection.connection()?;
         let transaction = connection.transaction()?;
+        let event_id =
+            self.transition_state_with_connection(&transaction, task_id, from_state, to_state)?;
+        transaction.commit()?;
+        Ok(event_id)
+    }
 
-        let current_state: String = transaction.query_row(
+    /// Transition a task and append its state event using a caller-owned
+    /// connection. This allows task state, checkpoints, and related events to
+    /// participate in one SQLite transaction.
+    pub fn transition_state_with_connection(
+        &self,
+        connection: &rusqlite::Connection,
+        task_id: Uuid,
+        from_state: TaskState,
+        to_state: TaskState,
+    ) -> Result<Uuid, TaskStoreError> {
+        let current_state: String = connection.query_row(
             "SELECT state FROM tasks WHERE task_id = ?1",
             [task_id.to_string()],
             |row| row.get("state"),
@@ -142,19 +161,18 @@ impl TaskStore {
             .map_err(TaskStoreError::InvalidTransition)?;
         let updated_at = chrono::Utc::now().to_rfc3339();
 
-        transaction.execute(
+        connection.execute(
             "UPDATE tasks SET state = ?1, updated_at = ?2 WHERE task_id = ?3",
             rusqlite::params![transition.as_str(), updated_at, task_id.to_string()],
         )?;
 
         let event_id = self.event_bus.emit_event_with_connection(
-            &transaction,
+            connection,
             Some(&task_id.to_string()),
             "TaskStateTransitioned",
             serde_json::json!({ "from": from_state.as_str(), "to": transition.as_str() }),
         )?;
 
-        transaction.commit()?;
         Ok(event_id)
     }
     /// Retrieves all tasks ordered by creation time.

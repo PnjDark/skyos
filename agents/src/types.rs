@@ -40,6 +40,8 @@ pub enum StepOutcome {
     ToolFailed,
     /// The runtime refused to dispatch (grant missing, expired, or revoked).
     PermissionDenied,
+    /// Physical outcome or its audit evidence could not be established.
+    OutcomeUnknown,
     /// Model signalled task completion (no tool call needed).
     Completed,
     /// Model or tool raised an error; repair was triggered.
@@ -71,6 +73,17 @@ pub enum AgentLoopStatus {
     BudgetExhausted { reason: String },
     /// Grant was missing, expired, or revoked; loop failed closed.
     PermissionDenied,
+    /// A dispatched operation may have taken effect but requires reconciliation.
+    OutcomeUnknown { reason: String },
+    /// The task was cancelled while this loop was running. The loop observed
+    /// `Cancelling`, wrote a durable acknowledgement, and stopped without
+    /// starting another operation.
+    Cancelled,
+    /// An interrupted task refused to resume because its recovery obligations
+    /// were not satisfied (unreconciled outcome, missing or mismatched
+    /// authorization permit, or a proposal that diverges from the authorized
+    /// retry).  Nothing was dispatched.
+    ResumeRejected { reason: String },
     /// Unrecoverable internal error (e.g. model provider failure).
     InternalError { message: String },
 }

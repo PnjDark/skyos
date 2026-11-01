@@ -18,14 +18,31 @@ impl ToolContext {
             agent_id: agent_id.into(),
         }
     }
+
+    /// Rebuild a context for an invocation whose identity was fixed before a
+    /// crash.  Recovery re-dispatch must reuse the recorded id so the retry is
+    /// provably the same operation.
+    pub fn with_invocation_id(
+        task_id: Uuid,
+        agent_id: impl Into<String>,
+        invocation_id: Uuid,
+    ) -> Self {
+        Self {
+            invocation_id,
+            task_id,
+            agent_id: agent_id.into(),
+        }
+    }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub enum ToolStatus {
     Succeeded,
     Failed,
     PermissionDenied,
     TimedOut,
+    OutcomeUnknown,
+    AuditPersistenceFailed,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

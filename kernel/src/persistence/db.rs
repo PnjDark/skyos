@@ -5,6 +5,14 @@ use rusqlite::{Connection, Result};
 use thiserror::Error;
 
 pub const DEFAULT_RUNTIME_STATE_PATH: &str = ".sky/runtime_state.db";
+/// Pragmas applied to every connection.
+///
+/// usy_timeout matters for correctness, not just convenience: SQLite in WAL
+/// mode allows one writer, and without a timeout a second writer fails
+/// immediately with SQLITE_BUSY. Concurrent budget reservations rely on waiting
+/// for the write lock rather than erroring.
+const BUSY_TOLERANT_PRAGMAS: &str =
+    "PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;";
 
 #[derive(Debug, Error)]
 pub enum DatabaseError {
@@ -29,7 +37,7 @@ impl DatabaseConnectionPool {
 
         let connection = Connection::open(path)?;
         connection
-            .execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;")
+            .execute_batch(BUSY_TOLERANT_PRAGMAS)
             .map_err(DatabaseError::Connection)?;
 
         Ok(Self {
@@ -47,7 +55,7 @@ impl DatabaseConnectionPool {
     pub fn connection(&self) -> Result<Connection, DatabaseError> {
         let connection = Connection::open(&self.path)?;
         connection
-            .execute_batch("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON;")
+            .execute_batch(BUSY_TOLERANT_PRAGMAS)
             .map_err(DatabaseError::Connection)?;
 
         Ok(connection)

@@ -1,0 +1,27 @@
+   Compiling kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.32s
+     Running tests\budget_tests.rs (target\debug\deps\budget_tests-92973d3add00f0a2.exe)
+
+running 19 tests
+test a_reservation_without_a_declared_envelope_is_refused ... ok
+test a_repeated_reservation_is_idempotent_and_a_conflict_is_refused ... ok
+test a_reservation_beyond_the_envelope_is_refused ... ok
+test a_child_allocation_beyond_the_parent_is_refused_without_partial_writes ... ok
+test a_child_allocation_is_drawn_from_the_parent ... ok
+test a_settlement_supersedes_its_reservation ... ok
+test adjustments_are_signed_and_added_once ... ok
+test a_terminal_resolved_child_releases_its_unused_allocation ... ok
+test crash_after_dispatch_retains_the_reservation ... ok
+test crash_after_checkpoint_success_is_stable ... ok
+test crash_after_settlement_before_the_checkpoint_does_not_double_count ... ok
+test crash_after_reservation_before_dispatch_releases_it ... ok
+test crash_before_reservation_charges_nothing ... ok
+test an_unresolved_child_keeps_its_allocation_held_even_when_terminal ... ok
+test an_active_child_holds_its_allocation_not_its_usage ... ok
+test recovery_bound_is_absent_for_an_invocation_that_never_dispatched ... ok
+test nested_delegation_rolls_up_without_double_counting ... ok
+test recovery_bound_is_capped_by_the_durable_dispatch_timeout ... ok
+test repeating_the_same_adjustment_is_idempotent_but_a_conflict_is_refused ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.41s
+

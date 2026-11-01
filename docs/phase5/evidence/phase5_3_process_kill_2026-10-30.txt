@@ -1,0 +1,22 @@
+# Phase 5.3 crash-injection gate (2026-10-30)
+#
+# Command: cargo test -p skyos-crash-harness (part of workspace_tests_2026-10-30.txt)
+# Result: 10 passed, 0 failed, exit 0.
+#
+# Raw output follows.
+
+     Running tests\process_kill.rs (C:\Users\Penjy\skyos_host_target\debug\deps\process_kill-7950d39d07fd3df8.exe)
+
+running 10 tests
+test crash_after_pending_leaves_no_side_effect ... ok
+test offline_policy_tightening_refuses_the_retry_end_to_end ... ok
+test crash_after_result_persistence_is_a_no_op_for_recovery ... ok
+test pending_crash_is_retry_ready_and_retries_exactly_once ... ok
+test crash_after_dispatch_blocks_the_task_without_duplicating ... ok
+test externally_killed_process_leaves_a_durable_unknown_outcome ... ok
+test proven_absent_effect_authorizes_a_single_retry ... ok
+test crash_after_the_side_effect_preserves_the_commit_and_never_replays_it ... ok
+test repeated_recovery_in_fresh_processes_is_idempotent ... ok
+test requeue_is_refused_while_the_outcome_is_unknown ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.42s

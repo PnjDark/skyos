@@ -1,0 +1,13 @@
+   Compiling kernel v0.1.0 (C:\Users\Penjy\Dev\skyos\kernel)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.97s
+     Running tests\budget_concurrency_tests.rs (target\debug\deps\budget_concurrency_tests-b637e36f1f54a547.exe)
+
+running 5 tests
+test concurrent_settlements_yield_one_row ... ok
+test settlement_racing_an_exposure_read_is_counted_once ... ok
+test concurrent_child_allocations_cannot_oversubscribe_the_parent ... ok
+test concurrent_reservations_for_one_invocation_yield_one_row ... ok
+test an_unresolved_sibling_holds_budget_against_release ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.64s
+

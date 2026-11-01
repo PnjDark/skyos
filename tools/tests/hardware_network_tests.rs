@@ -131,7 +131,7 @@ fn port_accepts_ephemeral_range() {
 
 #[test]
 fn hardware_capture_frame_denied_without_grant() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     // Grant for a different device
     let grant = hw_grant(&issuer, task_id, "/dev/video1", true);
@@ -146,7 +146,7 @@ fn hardware_capture_frame_denied_without_grant() {
 
 #[test]
 fn hardware_capture_frame_denied_for_blocked_device() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = hw_grant(&issuer, task_id, "/dev/sda", true);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -163,7 +163,7 @@ fn hardware_capture_frame_denied_for_blocked_device() {
 
 #[test]
 fn hardware_capture_frame_succeeds_with_valid_grant() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = hw_grant(&issuer, task_id, "/dev/video0", true);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -182,7 +182,7 @@ fn hardware_capture_frame_succeeds_with_valid_grant() {
 
 #[test]
 fn hardware_serial_write_denied_with_read_only_grant() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     // read_only=true cannot satisfy a write request
     let grant = hw_grant(&issuer, task_id, "/dev/ttyUSB0", true);
@@ -197,7 +197,7 @@ fn hardware_serial_write_denied_with_read_only_grant() {
 
 #[test]
 fn hardware_serial_write_rejects_invalid_baud_rate() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = hw_grant(&issuer, task_id, "/dev/ttyUSB0", false);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -211,7 +211,7 @@ fn hardware_serial_write_rejects_invalid_baud_rate() {
 
 #[test]
 fn hardware_serial_write_succeeds_with_write_grant() {
-    let (_, event_bus, mut registry, issuer) = runtime();
+    let (_temp, event_bus, mut registry, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = hw_grant(&issuer, task_id, "/dev/ttyUSB0", false);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -226,7 +226,7 @@ fn hardware_serial_write_succeeds_with_write_grant() {
 
 #[test]
 fn network_bind_socket_denied_without_matching_grant() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     // Grant covers port up to 8000; request is for 9000
     let grant = net_grant(&issuer, task_id, "127.0.0.1", 8000);
@@ -241,7 +241,7 @@ fn network_bind_socket_denied_without_matching_grant() {
 
 #[test]
 fn network_bind_socket_rejects_public_address() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = net_grant(&issuer, task_id, "8.8.8.8", 9000);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -255,7 +255,7 @@ fn network_bind_socket_rejects_public_address() {
 
 #[test]
 fn network_bind_socket_rejects_privileged_port() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = net_grant(&issuer, task_id, "127.0.0.1", 65535);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -269,7 +269,7 @@ fn network_bind_socket_rejects_privileged_port() {
 
 #[test]
 fn network_bind_socket_succeeds_with_valid_grant() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = net_grant(&issuer, task_id, "127.0.0.1", 9000);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -287,7 +287,7 @@ fn network_bind_socket_succeeds_with_valid_grant() {
 
 #[test]
 fn network_send_datagram_rejects_oversized_payload() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = net_grant(&issuer, task_id, "127.0.0.1", 9000);
     let ctx = ToolContext::new(task_id, "test_agent");
@@ -302,7 +302,7 @@ fn network_send_datagram_rejects_oversized_payload() {
 
 #[test]
 fn network_send_datagram_succeeds_with_valid_grant() {
-    let (_, event_bus, _, issuer) = runtime();
+    let (_temp, event_bus, _, issuer) = runtime();
     let task_id = Uuid::new_v4();
     let grant = net_grant(&issuer, task_id, "127.0.0.1", 9000);
     let ctx = ToolContext::new(task_id, "test_agent");

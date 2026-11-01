@@ -394,12 +394,19 @@ impl<'a> FilesystemToolRegistry<'a> {
                 "artifact_id": artifact.artifact_id,
             }),
         ) {
-            return self.record_failure(
-                ctx,
-                ToolStatus::Failed,
-                format!("Filesystem write succeeded but completion audit failed: {error}"),
-                EVENT_TOOL_EXECUTION_FAILED,
-            );
+            return ToolResult {
+                invocation_id: ctx.invocation_id,
+                status: ToolStatus::AuditPersistenceFailed,
+                output: ToolOutput::Text(format!(
+                    "Successfully wrote {} bytes to {:?}",
+                    content.len(),
+                    relative_path
+                )),
+                artifact: Some(artifact),
+                error_message: Some(format!(
+                    "Filesystem write succeeded but completion audit failed: {error}"
+                )),
+            };
         }
 
         ToolResult {

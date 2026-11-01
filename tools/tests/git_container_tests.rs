@@ -2,7 +2,9 @@ use kernel::artifacts::registry::ArtifactRegistry;
 use kernel::events::EventBus;
 use kernel::permissions::issuer::GrantIssuer;
 use kernel::permissions::types::Capability;
+use kernel::persistence::db::DatabaseConnectionPool;
 use std::path::Path;
+use std::process::Command;
 use tempfile::{tempdir, TempDir};
 use tools::containers::ContainerToolExecutor;
 use tools::git::GitToolRegistry;
@@ -252,6 +254,88 @@ async fn git_denied_operation_emits_permission_denied_event() {
     assert!(
         events.iter().any(|e| e.event_type == "PermissionDenied"),
         "expected PermissionDenied audit event"
+    );
+}
+
+#[tokio::test]
+async fn git_surfaces_policy_and_failure_audit_persistence_errors() {
+    let (temp, event_bus, mut registry, issuer) = runtime();
+    let task_id = Uuid::new_v4();
+    let grant = git_read_grant(&issuer, task_id, temp.path());
+    let ctx = ToolContext::new(task_id, "test_agent");
+    let git = GitToolRegistry::new(&event_bus, &mut registry, &issuer);
+
+    DatabaseConnectionPool::open(temp.path().join("runtime.db"))
+        .unwrap()
+        .connection()
+        .unwrap()
+        .execute_batch("DROP TABLE events")
+        .unwrap();
+
+    let result = git.status(&ctx, &grant, temp.path()).await;
+    assert_eq!(result.status, ToolStatus::Failed);
+    let error = result.error_message.unwrap();
+    assert!(error.contains("Failed to persist git read audit"));
+    assert!(error.contains("failed to persist Git failure audit"));
+}
+
+#[tokio::test]
+async fn successful_git_commit_with_failed_completion_audit_is_outcome_unknown() {
+    let (temp, event_bus, mut registry, issuer) = runtime();
+    let repo_root = temp.path().join("repo");
+    std::fs::create_dir(&repo_root).unwrap();
+    let run_git = |args: &[&str]| {
+        let output = Command::new("git")
+            .args(args)
+            .current_dir(&repo_root)
+            .output()
+            .expect("git is required for the Git integration tests");
+        assert!(
+            output.status.success(),
+            "git {args:?} failed: {}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    };
+    run_git(&["init"]);
+    run_git(&["config", "user.name", "Sky Test"]);
+    run_git(&["config", "user.email", "sky-test@example.invalid"]);
+    std::fs::write(repo_root.join("tracked.txt"), "commit me").unwrap();
+    run_git(&["add", "--", "tracked.txt"]);
+
+    let task_id = Uuid::new_v4();
+    let grant = git_write_grant(&issuer, task_id, &repo_root);
+    let ctx = ToolContext::new(task_id, "test_agent");
+    let mut git = GitToolRegistry::new(&event_bus, &mut registry, &issuer);
+
+    DatabaseConnectionPool::open(temp.path().join("runtime.db"))
+        .unwrap()
+        .connection()
+        .unwrap()
+        .execute_batch(
+            "CREATE TRIGGER reject_git_completion \
+             BEFORE INSERT ON events \
+             WHEN NEW.event_type = 'GitOperationCompleted' \
+             BEGIN SELECT RAISE(FAIL, 'completion audit unavailable'); END;",
+        )
+        .unwrap();
+
+    let result = git
+        .commit(&ctx, &grant, &repo_root, "test: commit with audit failure")
+        .await;
+    assert_eq!(result.status, ToolStatus::AuditPersistenceFailed);
+    assert!(result
+        .error_message
+        .unwrap()
+        .contains("completion audit failed"));
+
+    let output = Command::new("git")
+        .args(["rev-parse", "--verify", "HEAD"])
+        .current_dir(&repo_root)
+        .output()
+        .unwrap();
+    assert!(
+        output.status.success(),
+        "commit must physically exist despite its failed completion audit"
     );
 }
 
